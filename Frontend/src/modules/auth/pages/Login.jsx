@@ -23,6 +23,10 @@ import {
 import { Button } from "@food/components/ui/button"
 import { Input } from "@food/components/ui/input"
 import { Label } from "@food/components/ui/label"
+import grhapochLogo from "@food/assets/grhapoch-logo.png"
+import { loadBusinessSettings, getCachedSettings } from "@food/utils/businessSettings"
+
+const getUserLogoUrl = (settings) => settings?.userLogo?.url || settings?.logo?.url || ""
 
 // Beautiful Botanical Leaf Component
 const BotanicalLeaf = ({ className = "w-8 h-8", rotate = 0, opacity = 0.85 }) => (
@@ -61,6 +65,20 @@ const BotanicalLeaf = ({ className = "w-8 h-8", rotate = 0, opacity = 0.85 }) =>
 
 export default function UnifiedOTPFastLogin() {
   const RESEND_COOLDOWN_SECONDS = 60
+  // Grhapoch logo: the one saved in Business Settings, falling back to the bundled file
+  const [logoUrl, setLogoUrl] = useState(() => getUserLogoUrl(getCachedSettings()) || grhapochLogo)
+  useEffect(() => {
+    let active = true
+    loadBusinessSettings()
+      .then((settings) => {
+        const url = getUserLogoUrl(settings)
+        if (active && url) setLogoUrl(url)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
   const [phoneNumber, setPhoneNumber] = useState(() => sessionStorage.getItem("draft_phone_login") || "")
   const [otp, setOtp] = useState("")
   const [step, setStep] = useState(1)
@@ -377,12 +395,12 @@ export default function UnifiedOTPFastLogin() {
             className="w-44 h-44 sm:w-48 sm:h-48 mb-5 relative flex items-center justify-center rounded-full overflow-hidden shadow-[0_12px_28px_rgba(0,0,0,0.08)] bg-white"
           >
             <img
-              src="/logo.png"
+              src={logoUrl}
               alt="Grhapoch Logo"
-              className="w-full h-full object-cover scale-[1.04] select-none pointer-events-none transition-transform hover:scale-108 duration-300"
+              className="w-full h-full object-cover select-none pointer-events-none"
               onError={(e) => {
                 e.target.onerror = null
-                e.target.src = "/favicon.ico"
+                e.target.src = grhapochLogo
               }}
             />
           </motion.div>

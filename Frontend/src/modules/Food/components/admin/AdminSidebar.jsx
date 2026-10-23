@@ -701,24 +701,24 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
       `}</style>
       <div
         className={cn(
-          "border-r border-neutral-700/30 fixed left-0 top-0 z-[70] flex h-[100dvh] flex-col overflow-hidden",
+          "border-r border-neutral-800 fixed left-0 top-0 z-[70] flex h-[100dvh] flex-col overflow-hidden",
           "transform transition-all duration-300 ease-in-out",
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
           "w-[min(20rem,calc(100vw-1.5rem))]",
           isVisuallyCollapsed ? "lg:w-20" : "lg:w-80",
-          "bg-[#576574]"
+          "bg-black"
         )}
         style={{
-          backgroundColor: 'var(--ad-primary, #576574)',
+          backgroundColor: '#000000',
           paddingTop: 'env(safe-area-inset-top, 0px)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         {/* Header with Logo and Brand */}
         <div
-          className="shrink-0 px-3 py-3 border-b border-neutral-700/30 animate-[fadeIn_0.4s_ease-out] bg-[#4a5664]"
-          style={{ backgroundColor: 'var(--ad-primary-strong, #4a5664)' }}
+          className="shrink-0 px-3 py-3 border-b border-neutral-800 animate-[fadeIn_0.4s_ease-out] bg-black"
+          style={{ backgroundColor: '#000000' }}
         >
           <div className="flex items-center justify-between mb-3">
             {!isVisuallyCollapsed && (
