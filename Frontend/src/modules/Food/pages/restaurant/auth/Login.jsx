@@ -68,7 +68,7 @@ const BotanicalLeaf = ({ className = "w-8 h-8", rotate = 0, opacity = 0.9 }) => 
 
 export default function RestaurantLogin() {
   const logoUrl = useAppLogo("restaurant_app") || "/logo.png" || logoNew
-  const companyName = useCompanyName() || "CityFood"
+  const companyName = useCompanyName() || "Grhapoch"
   const navigate = useNavigate()
   const phoneInputRef = useRef(null)
 

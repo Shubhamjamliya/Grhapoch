@@ -1,8 +1,8 @@
 {
-  "name": "cityfood-backend",
+  "name": "grhapoch-backend",
   "version": "1.0.0",
   "type": "module",
-  "description": "CityFood Master Product Backend",
+  "description": "Grhapoch Master Product Backend",
   "main": "server.js",
   "scripts": {
     "start": "node api.js && node server.js",

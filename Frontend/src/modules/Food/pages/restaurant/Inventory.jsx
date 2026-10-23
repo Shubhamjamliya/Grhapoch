@@ -874,7 +874,7 @@ export default function Inventory() {
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       downloadFile({
         data: wbout,
-        filename: "cityfood_inventory_template.xlsx",
+        filename: "grhapoch_inventory_template.xlsx",
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       });
     } catch (err) {

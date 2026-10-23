@@ -228,7 +228,7 @@ export default function DeliverySignIn() {
           </svg>
         </motion.div>
 
-        {/* --- Top Section: Circular CityFood Delivery Badge --- */}
+        {/* --- Top Section: Circular Grhapoch Delivery Badge --- */}
         <div className="relative z-20 flex flex-col items-center pt-1">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
@@ -238,7 +238,7 @@ export default function DeliverySignIn() {
           >
             <img
               src={logoUrl}
-              alt="CityFood Delivery Logo"
+              alt="Grhapoch Delivery Logo"
               className="w-full h-full object-contain filter drop-shadow select-none pointer-events-none group-hover:scale-105 transition-transform duration-300"
               onError={(e) => {
                 e.currentTarget.onerror = null
@@ -274,7 +274,7 @@ export default function DeliverySignIn() {
           >
             <img
               src="/delivery-hero-clean.png"
-              alt="CityFood Delivery Partner"
+              alt="Grhapoch Delivery Partner"
               className="w-full h-auto object-cover select-none pointer-events-none drop-shadow-sm"
               onError={(e) => {
                 e.currentTarget.onerror = null

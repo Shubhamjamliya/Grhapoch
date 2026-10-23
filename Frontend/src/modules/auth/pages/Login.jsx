@@ -369,7 +369,7 @@ export default function UnifiedOTPFastLogin() {
         {/* --- Main Content Area --- */}
         <div className="w-full px-6 flex-1 flex flex-col items-center justify-center relative z-20 pt-1 pb-4">
           
-          {/* Circular CityFood Badge Logo (Rounded-full with border & shadow to clip white background) */}
+          {/* Circular Grhapoch Badge Logo (Rounded-full with border & shadow to clip white background) */}
           <motion.div
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -378,7 +378,7 @@ export default function UnifiedOTPFastLogin() {
           >
             <img
               src="/logo.png"
-              alt="CityFood Logo"
+              alt="Grhapoch Logo"
               className="w-full h-full object-cover scale-[1.04] select-none pointer-events-none transition-transform hover:scale-108 duration-300"
               onError={(e) => {
                 e.target.onerror = null
@@ -596,7 +596,7 @@ export default function UnifiedOTPFastLogin() {
         <div className="w-full relative z-10 leading-none select-none pointer-events-none mt-auto">
           <img
             src="/food/login-bottom-banner.png"
-            alt="CityFood - Good Food, Fast Delivery, Better Tomorrow"
+            alt="Grhapoch - Good Food, Fast Delivery, Better Tomorrow"
             className="w-full object-cover object-top block drop-shadow-sm"
           />
         </div>
@@ -605,7 +605,7 @@ export default function UnifiedOTPFastLogin() {
         <Dialog open={showNameModal} onOpenChange={setShowNameModal}>
           <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 shadow-2xl border-0">
             <DialogTitle className="text-xl font-extrabold text-[#0A4D27] text-center">
-              Welcome to CityFood! 🎉
+              Welcome to Grhapoch! 🎉
             </DialogTitle>
             <DialogDescription className="text-center text-gray-600 text-sm mt-1">
               What should we call you? Please enter your name to complete your profile.
@@ -633,7 +633,7 @@ export default function UnifiedOTPFastLogin() {
                 {isUpdatingName ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  "Continue to CityFood"
+                  "Continue to Grhapoch"
                 )}
               </Button>
             </form>

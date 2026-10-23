@@ -1,7 +1,7 @@
 {
-  "name": "CityFood",
-  "short_name": "CityFood",
-  "description": "CityFood Super App",
+  "name": "Grhapoch",
+  "short_name": "Grhapoch",
+  "description": "Grhapoch Super App",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

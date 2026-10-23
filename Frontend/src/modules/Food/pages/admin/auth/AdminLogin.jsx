@@ -85,7 +85,7 @@ export default function AdminLogin() {
             >
               <img
                 src={logoNew}
-                alt="CityFood Logo"
+                alt="Grhapoch Logo"
                 className="w-full h-full object-cover scale-[1.15]"
                 style={{ borderRadius: '50%' }}
               />

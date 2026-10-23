@@ -1,8 +1,8 @@
 {
   "id": "/admin/",
-  "name": "CityFood Admin",
-  "short_name": "CityFood Admin",
-  "description": "CityFood administration panel",
+  "name": "Grhapoch Admin",
+  "short_name": "Grhapoch Admin",
+  "description": "Grhapoch administration panel",
   "start_url": "/admin/food",
   "scope": "/admin/",
   "display": "standalone",

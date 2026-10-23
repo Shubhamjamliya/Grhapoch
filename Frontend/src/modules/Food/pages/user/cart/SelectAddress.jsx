@@ -117,7 +117,7 @@ export default function SelectAddress() {
       const query = [street, form.additionalDetails, city, state, form.zipCode].filter(Boolean).join(", ")
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`, {
-          headers: { "Accept-Language": "en", "User-Agent": "CityFood-App" }
+          headers: { "Accept-Language": "en", "User-Agent": "Grhapoch-App" }
         })
         const json = await res.json()
         if (Array.isArray(json) && json.length > 0) {

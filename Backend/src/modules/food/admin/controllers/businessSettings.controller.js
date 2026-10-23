@@ -66,7 +66,7 @@ export async function getBusinessSettings(req, res, next) {
         if (!settings) {
             // Create default settings if none exist
             settings = await FoodBusinessSettings.create({
-                companyName: 'CityFood',
+                companyName: 'Grhapoch',
                 email: 'admin@tuggo.com'
             });
         }
@@ -245,7 +245,7 @@ export async function updateBusinessToggles(req, res, next) {
         let settings = await FoodBusinessSettings.findOne();
         if (!settings) {
             settings = await FoodBusinessSettings.create({
-                companyName: 'CityFood',
+                companyName: 'Grhapoch',
                 email: 'admin@tuggo.com',
             });
         }

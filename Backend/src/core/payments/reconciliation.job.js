@@ -29,7 +29,7 @@ async function alert(text) {
         await fetch(url, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ text: `[CityFood payments] ${text}` })
+            body: JSON.stringify({ text: `[Grhapoch payments] ${text}` })
         });
     } catch (err) {
         logger.warn(`[PaymentReconciliation] alert webhook failed: ${err?.message || err}`);

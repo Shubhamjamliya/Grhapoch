@@ -225,7 +225,7 @@ export default function SignIn() {
         {/* --- Main Content Area --- */}
         <div className="w-full px-6 flex-1 flex flex-col items-center justify-center relative z-20 pt-1 pb-4">
           
-          {/* Circular CityFood Badge Logo */}
+          {/* Circular Grhapoch Badge Logo */}
           <motion.div
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -234,7 +234,7 @@ export default function SignIn() {
           >
             <img
               src="/logo.png"
-              alt="CityFood Logo"
+              alt="Grhapoch Logo"
               className="w-full h-full object-cover scale-[1.04] select-none pointer-events-none transition-transform hover:scale-108 duration-300"
               onError={(e) => {
                 e.target.onerror = null
@@ -339,7 +339,7 @@ export default function SignIn() {
         <div className="w-full relative z-10 leading-none select-none pointer-events-none mt-auto">
           <img
             src="/food/login-bottom-banner.png"
-            alt="CityFood - Good Food, Fast Delivery, Better Tomorrow"
+            alt="Grhapoch - Good Food, Fast Delivery, Better Tomorrow"
             className="w-full object-cover object-top block drop-shadow-sm"
           />
         </div>

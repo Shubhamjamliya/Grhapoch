@@ -476,7 +476,7 @@ export default function AddressSelectorPage() {
       }
 
       const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(cleanQuery)}`
-      const res = await fetch(url, { headers: { "Accept-Language": "en", "User-Agent": "CityFood-App" } })
+      const res = await fetch(url, { headers: { "Accept-Language": "en", "User-Agent": "Grhapoch-App" } })
       const json = await res.json()
       if (Array.isArray(json) && json.length > 0) {
         const item = json[0]
@@ -561,7 +561,7 @@ export default function AddressSelectorPage() {
       const response = await fetch(url, {
         headers: {
           "Accept-Language": "en",
-          "User-Agent": "CityFood-App"
+          "User-Agent": "Grhapoch-App"
         }
       })
       const json = await response.json()
@@ -869,7 +869,7 @@ export default function AddressSelectorPage() {
 
               <Label className="text-sm font-bold mb-2 block text-gray-700 dark:text-gray-300">Secondary Address (House No. / Flat / Floor)</Label>
               <Input
-                placeholder="E.g. Flat 402, 4th Floor, CityFood Building"
+                placeholder="E.g. Flat 402, 4th Floor, Grhapoch Building"
                 value={addressFormData.additionalDetails}
                 onChange={e => setAddressFormData({ ...addressFormData, additionalDetails: e.target.value })}
                 onFocus={() => scrollFieldIntoView("additionalDetails")}

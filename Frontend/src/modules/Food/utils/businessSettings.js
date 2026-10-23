@@ -174,15 +174,15 @@ export const getCachedSettings = () => cachedSettings;
 
 export const getCompanyName = () => {
   const settings = getCachedSettings();
-  return settings?.companyName || 'CityFood';
+  return settings?.companyName || 'Grhapoch';
 };
 
 export const getCompanyNameAsync = async () => {
   try {
     const settings = await loadBusinessSettings();
-    return settings?.companyName || 'CityFood';
+    return settings?.companyName || 'Grhapoch';
   } catch (_) {
-    return 'CityFood';
+    return 'Grhapoch';
   }
 };
 
