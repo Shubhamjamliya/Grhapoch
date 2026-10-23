@@ -25,6 +25,18 @@ export const adminSidebarMenu = [
   },
   {
     type: "section",
+    label: "SUBSCRIPTION MANAGEMENT",
+    items: [
+      {
+        type: "link",
+        label: "Subscriptions",
+        path: "/admin/food/restaurants/subscriptions",
+        icon: "Award",
+      },
+    ],
+  },
+  {
+    type: "section",
     label: "ORDER MANAGEMENT",
     items: [
       {
@@ -113,7 +125,6 @@ export const adminSidebarMenu = [
           { label: "Restaurant Payouts", path: "/admin/food/restaurant-payouts" },
           { label: "Unregistered Restaurants", path: "/admin/food/restaurants/unregistered" },
           { label: "Restaurant Settings", path: "/admin/food/restaurants/settings" },
-          { label: "Subscriptions", path: "/admin/food/restaurants/subscriptions" },
         ],
       },
       {

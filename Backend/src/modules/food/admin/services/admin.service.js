@@ -1743,22 +1743,48 @@ export async function updateSupportTicket(id, body = {}) {
 }
 
 // ----- Restaurant Commission (admin) -----
-export async function getRestaurantCommissions() {
-    const list = await FoodRestaurantCommission.find({})
-        .sort({ createdAt: -1 })
-        .populate({ path: 'restaurantId', select: 'restaurantName' })
+/** restaurantId -> { planName, commissionRate, endDate } for restaurants with a running subscription plan. */
+async function getActiveSubscriptionSummaryMap() {
+    const { FoodRestaurantSubscription } = await import('../../restaurant/models/restaurantSubscription.model.js');
+    const active = await FoodRestaurantSubscription.find({ status: 'active', endDate: { $gte: new Date() } })
+        .populate('planId')
         .lean();
 
-    const commissions = list.map((c, index) => ({
-        _id: c._id,
-        sl: index + 1,
-        restaurantId: c.restaurantId?._id ? String(c.restaurantId._id) : String(c.restaurantId),
-        restaurantName: c.restaurantId?.restaurantName || '',
-        restaurant: c.restaurantId?._id ? { _id: c.restaurantId._id, name: c.restaurantId.restaurantName } : null,
-        defaultCommission: c.defaultCommission || { type: 'percentage', value: 0 },
-        notes: c.notes || '',
-        status: c.status !== false
-    }));
+    const map = new Map();
+    for (const sub of active) {
+        if (!sub.restaurantId) continue;
+        map.set(String(sub.restaurantId), {
+            planName: sub.planId?.name || 'Active Plan',
+            commissionRate: sub.planId?.commissionRate ?? 0,
+            endDate: sub.endDate
+        });
+    }
+    return map;
+}
+
+export async function getRestaurantCommissions() {
+    const [list, subscriptions] = await Promise.all([
+        FoodRestaurantCommission.find({})
+            .sort({ createdAt: -1 })
+            .populate({ path: 'restaurantId', select: 'restaurantName' })
+            .lean(),
+        getActiveSubscriptionSummaryMap()
+    ]);
+
+    const commissions = list.map((c, index) => {
+        const restaurantId = c.restaurantId?._id ? String(c.restaurantId._id) : String(c.restaurantId);
+        return {
+            _id: c._id,
+            sl: index + 1,
+            restaurantId,
+            restaurantName: c.restaurantId?.restaurantName || '',
+            restaurant: c.restaurantId?._id ? { _id: c.restaurantId._id, name: c.restaurantId.restaurantName } : null,
+            defaultCommission: c.defaultCommission || { type: 'percentage', value: 0 },
+            notes: c.notes || '',
+            status: c.status !== false,
+            activeSubscription: subscriptions.get(restaurantId) || null
+        };
+    });
 
     return { commissions };
 }
@@ -1773,12 +1799,14 @@ export async function getRestaurantCommissionBootstrap() {
         (commissionsData.commissions || []).map((c) => String(c.restaurantId))
     );
 
+    const subscriptions = await getActiveSubscriptionSummaryMap();
     const restaurants = (restaurantsData.restaurants || []).map((r) => ({
         _id: r._id,
         name: r.restaurantName || r.name || '',
         restaurantId: r._id ? `REST${r._id.toString().slice(-6).padStart(6, '0')}` : '',
         ownerName: r.ownerName || '',
-        hasCommissionSetup: commissionByRestaurantId.has(String(r._id))
+        hasCommissionSetup: commissionByRestaurantId.has(String(r._id)),
+        activeSubscription: subscriptions.get(String(r._id)) || null
     }));
 
     const feeSettings = await FoodFeeSettings.findOne({ isActive: true }).sort({ createdAt: -1 }).lean() || {};

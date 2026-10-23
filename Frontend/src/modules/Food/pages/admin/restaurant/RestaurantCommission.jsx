@@ -48,6 +48,7 @@ export default function RestaurantCommission() {
     restaurant: true,
     restaurantId: true,
     defaultCommission: true,
+    activeSubscription: true,
     status: true,
     actions: true,
   })
@@ -66,6 +67,7 @@ export default function RestaurantCommission() {
         restaurantId: restaurant.restaurantId,
         hasCustomCommission: !!commission,
         commissionData: commission || null,
+        activeSubscription: restaurant.activeSubscription || commission?.activeSubscription || null,
         defaultCommission: commission ? commission.defaultCommission : {
           type: 'percentage',
           value: globalSettings.globalRestaurantCommission
@@ -582,6 +584,11 @@ export default function RestaurantCommission() {
                         Default Commission
                       </th>
                     )}
+                    {visibleColumns.activeSubscription && (
+                      <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                        Active Subscription
+                      </th>
+                    )}
                     {visibleColumns.status && (
                       <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                         Status
@@ -633,6 +640,22 @@ export default function RestaurantCommission() {
                                 {item.hasCustomCommission ? 'Custom' : 'Global Default'}
                               </span>
                             </div>
+                          </td>
+                        )}
+                        {visibleColumns.activeSubscription && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.activeSubscription ? (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 w-fit">
+                                  {item.activeSubscription.planName}
+                                </span>
+                                <span className="text-[11px] text-slate-500 font-semibold">
+                                  Rate: {item.activeSubscription.commissionRate}%
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400 font-medium italic">No subscription</span>
+                            )}
                           </td>
                         )}
                         {visibleColumns.status && (
