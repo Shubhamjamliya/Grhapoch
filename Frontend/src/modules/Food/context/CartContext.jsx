@@ -1,6 +1,7 @@
 // src/context/cart-context.jsx
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { buildCartLineId } from "@food/utils/foodVariants"
+import { userAPI } from "@food/api"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -436,6 +437,39 @@ export function CartProvider({ children }) {
       return cleanedCart;
     });
   }
+
+  // Sync the cart to the server (authenticated users only) so admins can see abandoned carts.
+  const cartSyncTimerRef = useRef(null)
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined
+
+    const scheduleCartSync = () => {
+      const isAuthenticated =
+        localStorage.getItem("user_authenticated") === "true" ||
+        !!localStorage.getItem("user_accessToken")
+      if (!isAuthenticated) return
+
+      if (cartSyncTimerRef.current) clearTimeout(cartSyncTimerRef.current)
+      cartSyncTimerRef.current = setTimeout(() => {
+        const items = normalizeCartData(cart)
+        let pricing = null
+        try {
+          const rawPricing = sessionStorage.getItem("food_cart_pricing_snapshot")
+          if (rawPricing) pricing = JSON.parse(rawPricing)
+        } catch {
+          pricing = null
+        }
+        userAPI.syncCart({ items, pricing }).catch(() => {})
+      }, 1200)
+    }
+
+    scheduleCartSync()
+    window.addEventListener("food_cart_pricing_updated", scheduleCartSync)
+    return () => {
+      window.removeEventListener("food_cart_pricing_updated", scheduleCartSync)
+      if (cartSyncTimerRef.current) clearTimeout(cartSyncTimerRef.current)
+    }
+  }, [cart])
 
   // Validate and clean cart on mount/load to prevent multiple restaurant items
   // This runs only once on initial load to clean up any corrupted cart data from localStorage

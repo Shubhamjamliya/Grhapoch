@@ -1,4 +1,5 @@
-﻿import express from 'express';
+﻿import { syncUserCartController } from '../controllers/userCart.controller.js';
+import express from 'express';
 import { moneyRateLimiter } from '../../../../middleware/rateLimit.js';
 import { upload } from '../../../../middleware/upload.js';
 import {
@@ -68,6 +69,7 @@ router.patch('/addresses/:addressId/default', setDefaultAddressController);
 // Delete account (Bearer USER)
 router.get('/location', getUserLocationController);
 router.put('/location', updateUserLocationController);
+router.put('/cart', syncUserCartController);
 
 router.delete('/account', deleteUserAccountController);
 

@@ -21,6 +21,7 @@ import { CashLimitInfoV2 } from './pages/pocket/CashLimitInfoV2';
 import { ProfileBankV2 } from './pages/profile/ProfileBankV2';
 import { ProfileDocsV2 } from './pages/profile/ProfileDocsV2';
 import { SupportTicketsV2 } from './pages/help/SupportTicketsV2';
+import { OrderEmergencyRequestsV2 } from './pages/help/OrderEmergencyRequestsV2';
 import { CreateSupportTicketV2 } from './pages/help/CreateSupportTicketV2';
 import { ViewSupportTicketV2 } from './pages/help/ViewSupportTicketV2';
 import { PublicSupportV2 } from './pages/help/PublicSupportV2';
@@ -65,6 +66,7 @@ const DeliveryV2Router = () => {
         <Route path="help/tickets" element={<ProtectedRoute><SupportTicketsV2 /></ProtectedRoute>} />
         <Route path="help/tickets/create" element={<ProtectedRoute><CreateSupportTicketV2 /></ProtectedRoute>} />
         <Route path="help/tickets/:ticketId" element={<ProtectedRoute><ViewSupportTicketV2 /></ProtectedRoute>} />
+        <Route path="help/order-emergency" element={<ProtectedRoute><OrderEmergencyRequestsV2 /></ProtectedRoute>} />
         <Route path="help/id-card" element={<ProtectedRoute><ShowIdCardV2 /></ProtectedRoute>} />
         <Route path="profile/terms" element={<ProtectedRoute><TermsAndConditionsV2 /></ProtectedRoute>} />
         <Route path="profile/privacy" element={<ProtectedRoute><PrivacyPolicyV2 /></ProtectedRoute>} />

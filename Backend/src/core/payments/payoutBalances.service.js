@@ -77,7 +77,7 @@ export async function getRiderBalances(partnerId) {
     const [earnedRows, bonusRows, withdrawalRows, cashRows, depositRows] = await Promise.all([
         FoodOrder.aggregate([
             { $match: { 'dispatch.deliveryPartnerId': pid, orderStatus: 'delivered' } },
-            { $group: { _id: null, total: { $sum: { $ifNull: ['$riderEarning', 0] } } } }
+            { $group: { _id: null, total: { $sum: { $add: [{ $ifNull: ['$riderEarning', 0] }, { $ifNull: ['$pricing.tip', 0] }] } } } }
         ]),
         DeliveryBonusTransaction.aggregate([
             { $match: { deliveryPartnerId: pid } },

@@ -43,6 +43,10 @@ const pricingSchema = new mongoose.Schema(
         packagingFee: { type: Number, default: 0, min: 0 },
         deliveryFee: { type: Number, default: 0, min: 0 },
         platformFee: { type: Number, default: 0, min: 0 },
+        // Optional customer tip; 100% goes to the delivery partner.
+        tip: { type: Number, default: 0, min: 0 },
+        // Optional customer donation; goes to the platform (admin).
+        donation: { type: Number, default: 0, min: 0 },
         restaurantCommission: { type: Number, default: 0, min: 0 },
         gstOnItem: { type: Number, default: 0, min: 0 },
         gstOnCommission: { type: Number, default: 0, min: 0 },

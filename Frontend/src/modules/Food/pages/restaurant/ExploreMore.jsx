@@ -30,6 +30,8 @@ import {
   MapPin,
   LogOut,
   Ticket,
+  Award,
+  Megaphone,
 } from "lucide-react"
 import RestaurantBentoGrid from "@food/components/restaurant/RestaurantBentoGrid"
 import { Card, CardContent } from "@food/components/ui/card"
@@ -39,6 +41,7 @@ import { restaurantAPI, notificationAPI } from "@food/api"
 import { firebaseAuth, ensureFirebaseInitialized } from "@food/firebase"
 import { toast } from "sonner"
 import { registerWebPushForCurrentModule } from "@food/utils/firebaseMessaging"
+import { isFeatureEnabled, loadCorePublicAppConfig } from "@food/services/publicAppConfig"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -846,14 +849,31 @@ export default function ExploreMore() {
   // Lenis smooth scrolling (using RestaurantLayout's scroll context)
   useRestaurantLenis()
 
+  // Feature flags (banner advertising) come from the public admin config
+  const [featureConfigLoaded, setFeatureConfigLoaded] = useState(false)
+  useEffect(() => {
+    loadCorePublicAppConfig()
+      .then(() => setFeatureConfigLoaded(true))
+      .catch(() => {})
+  }, [])
+
   // Section data
-  const manageOutletItems = [
+  const manageOutletItems = useMemo(() => {
+    const items = [
     { id: 1, label: "Outlet info", icon: Info, route: "/food/restaurant/outlet-info" },
     { id: 2, label: "Outlet timings", icon: Clock, route: "/food/restaurant/outlet-timings" },
     // { id: 3, label: "Dining Reservations", icon: Calendar, route: "/food/restaurant/reservations" },
     { id: 4, label: "Menu categories", icon: Settings, route: "/food/restaurant/menu-categories" },
     { id: 6, label: "Promo Codes", icon: Ticket, route: "/food/restaurant/promocodes" },
-  ]
+    { id: "subscription-nav", label: "Subscription", icon: Award, route: "/food/restaurant/subscription" },
+    ]
+
+    if (isFeatureEnabled("banner_advertising", false)) {
+      items.push({ id: "ads-nav", label: "Advertisements", icon: Megaphone, route: "/food/restaurant/advertisements" })
+    }
+
+    return items
+  }, [featureConfigLoaded])
 
   const settingsItems = [
     { id: 3, label: "Delivery settings", icon: Truck, route: "/food/restaurant/delivery-settings" },

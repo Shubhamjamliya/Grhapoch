@@ -47,7 +47,12 @@ export const config = {
     otpRateWindow: Number(process.env.OTP_RATE_WINDOW || 600),
     useDefaultOtp: process.env.USE_DEFAULT_OTP === 'true',
 
-    // SMSWala India
+    // PRPSMS (primary OTP sender when PRPSMS_API_KEY is set)
+    prpSmsApiKey: process.env.PRPSMS_API_KEY,
+    prpSmsSenderId: process.env.PRPSMS_SENDER_ID,
+    prpSmsOtpTemplate: process.env.PRPSMS_OTP_TEMPLATE,
+
+    // SMSWala India (used when PRPSMS is not configured)
     smsWalaApiUrl: process.env.SMSWALA_API_URL || 'https://sms.smswala.in/app/smsapi/index.php',
     smsWalaApiKey: process.env.SMSWALA_API_KEY,
     smsWalaCampaignId: process.env.SMSWALA_CAMPAIGN_ID || '16541',
@@ -57,6 +62,9 @@ export const config = {
     smsWalaPeId: process.env.SMSWALA_PE_ID,
 
     // Rate limiting
+    rateLimitEnabled: process.env.RATE_LIMIT_ENABLED !== 'false',
+    // Global per-IP ceiling for the whole API (read-heavy public routes are exempt, see middleware/rateLimit.js)
+    globalRateLimitMax: Number(process.env.GLOBAL_RATE_LIMIT_MAX || 2500),
     rateLimitWindowMinutes: Number(process.env.RATE_LIMIT_WINDOW || 15),
     rateLimitMaxRequests: Number(process.env.RATE_LIMIT_MAX || 100),
     authRateLimitWindowMinutes: Number(process.env.AUTH_RATE_LIMIT_WINDOW || 15),
@@ -154,6 +162,9 @@ export const updateConfig = () => {
     config.otpRateLimit = Number(process.env.OTP_RATE_LIMIT || config.otpRateLimit);
     config.otpRateWindow = Number(process.env.OTP_RATE_WINDOW || config.otpRateWindow);
     config.useDefaultOtp = process.env.USE_DEFAULT_OTP === 'true';
+    config.prpSmsApiKey = process.env.PRPSMS_API_KEY || config.prpSmsApiKey;
+    config.prpSmsSenderId = process.env.PRPSMS_SENDER_ID || config.prpSmsSenderId;
+    config.prpSmsOtpTemplate = process.env.PRPSMS_OTP_TEMPLATE || config.prpSmsOtpTemplate;
     config.smsWalaApiUrl = process.env.SMSWALA_API_URL || config.smsWalaApiUrl;
     config.smsWalaApiKey = process.env.SMSWALA_API_KEY || config.smsWalaApiKey;
     config.smsWalaCampaignId = process.env.SMSWALA_CAMPAIGN_ID || config.smsWalaCampaignId;
@@ -161,6 +172,8 @@ export const updateConfig = () => {
     config.smsWalaSenderId = process.env.SMSWALA_SENDER_ID || config.smsWalaSenderId;
     config.smsWalaTemplateId = process.env.SMSWALA_TEMPLATE_ID || config.smsWalaTemplateId;
     config.smsWalaPeId = process.env.SMSWALA_PE_ID || config.smsWalaPeId;
+    config.rateLimitEnabled = process.env.RATE_LIMIT_ENABLED !== 'false';
+    config.globalRateLimitMax = Number(process.env.GLOBAL_RATE_LIMIT_MAX || config.globalRateLimitMax);
     config.rateLimitWindowMinutes = Number(process.env.RATE_LIMIT_WINDOW || config.rateLimitWindowMinutes);
     config.rateLimitMaxRequests = Number(process.env.RATE_LIMIT_MAX || config.rateLimitMaxRequests);
     config.authRateLimitWindowMinutes = Number(process.env.AUTH_RATE_LIMIT_WINDOW || config.authRateLimitWindowMinutes);

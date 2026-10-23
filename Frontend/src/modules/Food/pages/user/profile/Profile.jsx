@@ -26,7 +26,9 @@ import {
   Utensils,
   Trash2,
   Bell,
+  Megaphone,
 } from "lucide-react";
+import { isFeatureEnabled, loadCorePublicAppConfig } from "@food/services/publicAppConfig";
 
 import AnimatedPage from "@food/components/user/AnimatedPage";
 import { Card, CardContent } from "@food/components/ui/card";
@@ -95,6 +97,14 @@ export default function Profile() {
   const [deleteCaptcha, setDeleteCaptcha] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTestingNotification, setIsTestingNotification] = useState(false);
+
+  // Feature flags (banner advertising) come from the public admin config
+  const [, setFeatureConfigLoaded] = useState(false);
+  useEffect(() => {
+    loadCorePublicAppConfig()
+      .then(() => setFeatureConfigLoaded(true))
+      .catch(() => {});
+  }, []);
 
   // Trigger web push registration when profile mounts to ensure FCM token is saved
   useEffect(() => {
@@ -622,6 +632,22 @@ export default function Profile() {
               </Card>
             </motion.div>
           </Link>
+
+          {isFeatureEnabled("banner_advertising", false) && (
+            <Link to="/user/profile/advertisements" className="block">
+              <Card className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-2">
+                      <Megaphone className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                    </div>
+                    <span className="text-base font-medium text-gray-900 dark:text-white">Self-Serve Ads</span>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                </CardContent>
+              </Card>
+            </Link>
+          )}
 
           <Link to="/user/profile/coupons" className="block">
             <motion.div

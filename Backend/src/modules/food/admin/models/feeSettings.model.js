@@ -18,6 +18,10 @@ const feeSettingsSchema = new mongoose.Schema(
         freeDeliveryThreshold: { type: Number, min: 0 },
         platformFee: { type: Number, min: 0 },
         packagingFee: { type: Number, min: 0 },
+        donationEnabled: { type: Boolean, default: false },
+        donationAmount: { type: Number, min: 0, max: 1000 },
+        // Preset amounts customers can pick from at checkout (supersedes the legacy single donationAmount).
+        donationAmounts: { type: [Number], default: [] },
         gstRate: { type: Number, min: 0, max: 100 },
         gstOnDeliveryFee: { type: Number, min: 0, max: 100, default: 0 },
         gstOnPlatformFee: { type: Number, min: 0, max: 100, default: 0 },

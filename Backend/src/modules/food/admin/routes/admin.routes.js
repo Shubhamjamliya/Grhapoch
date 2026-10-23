@@ -7,6 +7,8 @@ import * as businessSettingsController from '../controllers/businessSettings.con
 import * as feedbackExperienceController from '../controllers/feedbackExperience.controller.js';
 import * as notificationBroadcastController from '../controllers/notificationBroadcast.controller.js';
 import * as diningAdminController from '../../dining/controllers/diningAdmin.controller.js';
+import * as subscriptionAdminController from '../controllers/subscriptionAdmin.controller.js';
+import * as userCartAdminController from '../controllers/userCartAdmin.controller.js';
 import * as orderController from '../../orders/controllers/order.controller.js';
 import { getAdminPageController, upsertAdminPageController } from '../controllers/pageContent.controller.js';
 import * as liveMonitorController from '../controllers/liveMonitor.controller.js';
@@ -29,6 +31,8 @@ router.get('/business-settings/public', businessSettingsController.getBusinessSe
 
 // ----- Public Fee Settings (No Admin Required) -----
 router.get('/fee-settings/public', adminController.getFeeSettings);
+router.get('/power-scanning/public', businessSettingsController.getPowerScanningSettings);
+router.get('/feature-settings/public', adminController.getFeatureSettings);
 
 import { requireAdmin, requireSuperAdmin } from '../../../../core/auth/auth.middleware.js';
 
@@ -79,6 +83,8 @@ router.delete('/safety-emergency-reports/:id', adminController.deleteSafetyEmerg
 router.get('/support-tickets', adminController.getSupportTicketsController);
 router.patch('/support-tickets/:id', adminController.updateSupportTicketController);
 router.get('/global-search', adminController.globalSearch);
+router.get('/restaurants/complaints/stats', adminController.getRestaurantComplaintStatsController);
+router.get('/support-tickets/stats', adminController.getFoodSupportTicketStatsController);
 router.get('/restaurants/complaints', adminController.getRestaurantComplaints);
 router.patch('/restaurants/complaints/:id', adminController.updateRestaurantComplaint);
 
@@ -89,6 +95,8 @@ router.get('/reports/restaurants', adminController.getRestaurantReport);
 router.get('/reports/transactions', adminController.getTransactionReport);
 router.get('/reports/tax', adminController.getTaxReport);
 router.get('/reports/tax/:id', adminController.getTaxReportDetail);
+router.get('/restaurants/unregistered', adminController.getUnregisteredRestaurants);
+router.delete('/restaurants/unregistered/:id', adminController.deleteUnregisteredRestaurant);
 router.get('/restaurants/pending', adminController.getPendingRestaurants);
 router.get('/restaurants/reviews', adminController.getRestaurantReviews);
 router.get('/restaurants/:id/menu-pdf', adminController.getRestaurantMenuPdfDownloadUrl);
@@ -138,6 +146,7 @@ router.patch('/addons/:id/reject', addonsApprovalController.rejectRestaurantAddo
 // Food approval queue (pending items created by restaurants)
 router.get('/foods/pending-approvals', foodApprovalController.getPendingFoodApprovals);
 router.patch('/foods/bulk-approve', foodApprovalController.bulkApproveFoodItemsController);
+router.post('/foods/bulk-delete', adminController.bulkDeleteFoodItems);
 router.patch('/foods/:id/approve', foodApprovalController.approveFoodItemController);
 router.patch('/foods/:id/reject', foodApprovalController.rejectFoodItemController);
 
@@ -149,6 +158,7 @@ router.delete('/foods/:id', adminController.deleteFood);
 // ----- Offers & Coupons -----
 router.get('/offers', adminController.getAllOffers);
 router.post('/offers', adminController.createAdminOffer);
+router.put('/offers/:id', adminController.updateAdminOffer);
 router.patch('/offers/:id/cart-visibility', adminController.updateAdminOfferCartVisibility);
 router.delete('/offers/:id', adminController.deleteAdminOffer);
 
@@ -167,6 +177,27 @@ router.put('/referral-settings', adminController.createOrUpdateReferralSettings)
 // ----- Business Settings -----
 router.get('/business-settings/public', businessSettingsController.getBusinessSettings); // Public endpoint
 router.get('/business-settings', businessSettingsController.getBusinessSettings);
+
+// ----- Power scanning (per-app theme colour / font) & order acceptance window -----
+router.get('/power-scanning', businessSettingsController.getPowerScanningSettings);
+router.patch('/power-scanning', businessSettingsController.updatePowerScanningSettings);
+router.get('/restaurant-settings/order-acceptance', businessSettingsController.getOrderAcceptanceSettings);
+router.patch('/restaurant-settings/order-acceptance', businessSettingsController.updateOrderAcceptanceSettings);
+
+// ----- Feature settings & donations -----
+router.get('/feature-settings', adminController.getFeatureSettings);
+router.patch('/feature-settings/:key', adminController.updateFeatureSetting);
+router.get('/donations', adminController.getDonationReport);
+
+// ----- Restaurant subscriptions -----
+router.get('/restaurant-subscription-plans', subscriptionAdminController.getSubscriptionPlansController);
+router.post('/restaurant-subscription-plans', subscriptionAdminController.createSubscriptionPlanController);
+router.get('/restaurant-subscription-plans/:id', subscriptionAdminController.getSubscriptionPlanByIdController);
+router.patch('/restaurant-subscription-plans/:id', subscriptionAdminController.updateSubscriptionPlanController);
+router.delete('/restaurant-subscription-plans/:id', subscriptionAdminController.deleteSubscriptionPlanController);
+router.get('/restaurant-subscriptions', subscriptionAdminController.getRestaurantSubscriptionsController);
+router.get('/restaurant-subscription-settings', subscriptionAdminController.getSubscriptionSettingsController);
+router.patch('/restaurant-subscription-settings', subscriptionAdminController.updateSubscriptionSettingsController);
 router.patch('/business-settings/toggles', businessSettingsController.updateBusinessToggles);
 router.patch('/business-settings', upload.fields([
     { name: 'logo', maxCount: 1 },
@@ -237,6 +268,10 @@ router.post('/delivery/earning-addon-completions/check', adminController.checkEa
 router.get('/delivery/support-tickets/stats', adminController.getSupportTicketStats);
 router.get('/delivery/support-tickets', adminController.getSupportTickets);
 router.patch('/delivery/support-tickets/:id', adminController.updateSupportTicket);
+router.get('/delivery/order-emergency-requests', adminController.getOrderEmergencyRequests);
+router.get('/delivery/order-emergency-requests/:id', adminController.getOrderEmergencyRequest);
+router.patch('/delivery/order-emergency-requests/:id', adminController.updateOrderEmergencyRequest);
+router.patch('/delivery/order-emergency-requests/:id/deassign-resend', adminController.deassignAndResendOrderEmergencyRequest);
 router.get('/delivery/partners', adminController.getDeliveryPartners);
 router.get('/delivery/:id', adminController.getDeliveryPartnerById);
 router.patch('/delivery/:id/approve', adminController.approveDeliveryPartner);
@@ -264,8 +299,15 @@ router.patch('/dining/requests/:id/reject', diningAdminController.rejectDiningRe
 
 // ----- Orders -----
 router.get('/orders', orderController.listOrdersAdminController);
+router.get('/orders/user-carts', userCartAdminController.listUserCartsAdminController);
+router.get('/orders/user-carts/:cartId/pricing', userCartAdminController.getUserCartPricingAdminController);
 router.get('/orders/:orderId', orderController.getOrderByIdAdminController);
 router.patch('/orders/:orderId/status', orderController.updateOrderStatusAdminController);
+router.patch('/orders/:orderId/accept', orderController.acceptOrderAdminController);
+router.patch('/orders/:orderId/reject', orderController.rejectOrderAdminController);
+router.patch('/orders/:orderId/mark-delivered', orderController.markOrderDeliveredAdminController);
+router.patch('/orders/:orderId/deassign-resend', adminController.deassignAndResendOrder);
+router.post('/orders/:orderId/refund', orderController.processRefundAdminController);
 router.delete('/orders/:orderId', orderController.deleteOrderAdminController);
 router.post('/orders/:orderId/assign-delivery', orderController.assignDeliveryPartnerController);
 router.post('/orders/:orderId/resend-notification', orderController.resendDeliveryNotificationAdminController);

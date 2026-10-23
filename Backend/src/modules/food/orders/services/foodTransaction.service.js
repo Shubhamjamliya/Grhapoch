@@ -69,9 +69,20 @@ export async function getRestaurantCommissionSnapshot(orderDoc) {
         };
     }
 
+    // An active subscription plan overrides the standard commission rule with the plan's rate.
+    let subscriptionPlan = null;
+    try {
+        const { getCurrentSubscription } = await import('../../restaurant/services/restaurantSubscription.service.js');
+        const activeSubscription = await getCurrentSubscription(restaurantIdRaw);
+        if (activeSubscription) subscriptionPlan = activeSubscription.planId || {};
+    } catch (err) {
+        console.error('[SUBSCRIPTION_CHECK_ERROR] Failed to check restaurant subscription:', err);
+    }
+
     const rules = await getActiveRestaurantCommissionRules();
-    let rule =
-        rules.find((r) => String(r.restaurantId) === String(restaurantIdRaw)) ||
+    let rule = subscriptionPlan
+        ? { defaultCommission: { type: 'percentage', value: Number(subscriptionPlan.commissionRate ?? 0) || 0 } }
+        : rules.find((r) => String(r.restaurantId) === String(restaurantIdRaw)) ||
         // Fallback: accept legacy docs where restaurantId may be stored under `restaurant` / `restaurant_id`
         rules.find((r) => String(r.restaurant || r.restaurant_id || '') === String(restaurantIdRaw)) ||
         null;
@@ -95,6 +106,10 @@ export async function getRestaurantCommissionSnapshot(orderDoc) {
         commissionValue: 0,
         baseAmount,
     };
+    if (subscriptionPlan) {
+        result.hasActiveSubscription = true;
+        result.subscriptionPlanName = subscriptionPlan.name;
+    }
 
     const globalSettings = await FoodFeeSettings.findOne({ isActive: true }).sort({ createdAt: -1 }).lean() || {};
 
@@ -147,7 +162,10 @@ export async function createInitialTransaction(order, { session = null } = {}) {
 
     const restaurantNet = (order.pricing?.subtotal || 0) + (order.pricing?.packagingFee || 0) - restaurantCommission - gstOnItem - gstOnCommission - paymentGatewayFee - tcs;
 
-    const calculatedPlatformNetProfit = (order.pricing?.platformFee || 0) + (order.pricing?.deliveryFee || 0) + restaurantCommission + gstOnItem + paymentGatewayFee + tcs - riderShare;
+    const tip = Number(order.pricing?.tip) || 0;
+    const donation = Number(order.pricing?.donation) || 0;
+
+    const calculatedPlatformNetProfit = (order.pricing?.platformFee || 0) + donation + (order.pricing?.deliveryFee || 0) + restaurantCommission + gstOnItem + paymentGatewayFee + tcs - riderShare;
     const platformNetProfit = order.platformProfit !== undefined
         ? order.platformProfit
         : Math.max(0, calculatedPlatformNetProfit);
@@ -185,6 +203,8 @@ export async function createInitialTransaction(order, { session = null } = {}) {
             packagingFee: Number(order.pricing?.packagingFee || 0) || 0,
             deliveryFee: Number(order.pricing?.deliveryFee || 0) || 0,
             platformFee: Number(order.pricing?.platformFee || 0) || 0,
+            tip,
+            donation,
             restaurantCommission,
             discount: Number(order.pricing?.discount || 0) || 0,
             total: Number(order.pricing?.total || 0) || 0,
@@ -199,6 +219,8 @@ export async function createInitialTransaction(order, { session = null } = {}) {
             paymentGatewayFee,
             tcs,
             riderShare,
+            riderTip: tip,
+            donationAmount: donation,
             platformNetProfit,
             taxAmount: order.pricing?.tax || 0
         },

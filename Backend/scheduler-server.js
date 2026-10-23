@@ -43,6 +43,18 @@ const startScheduler = async () => {
         runFssaiExpirySync();
         setInterval(runFssaiExpirySync, 60 * 60 * 1000);
 
+        // Restaurant subscription expiry warnings (hourly)
+        const runSubscriptionExpiryCheck = async () => {
+            try {
+                const { checkAndSendSubscriptionExpiryWarnings } = await import('./src/modules/food/restaurant/services/restaurantSubscription.service.js');
+                await checkAndSendSubscriptionExpiryWarnings();
+            } catch (err) {
+                logger.error(`Subscription expiry check error: ${err.message}`);
+            }
+        };
+        runSubscriptionExpiryCheck();
+        setInterval(runSubscriptionExpiryCheck, 60 * 60 * 1000);
+
         // Restaurant Unaccepted Order Phone Call Alert Poller (every 30 seconds)
         try {
             const { pollAndTriggerRestaurantCallAlerts } = await import('./src/modules/food/orders/services/order-call-alert.service.js');

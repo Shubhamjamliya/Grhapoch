@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { FoodUnregisteredRestaurant } from '../../restaurant/models/unregisteredRestaurant.model.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
 import { FoodRestaurant } from '../../restaurant/models/restaurant.model.js';
 import { buildRawDownloadUrlFromFileUrl, normalizeStoredUploadPath } from '../../../../services/upload.service.js';
@@ -2031,6 +2032,14 @@ export async function upsertFeeSettings(body) {
         if (body.gstRate === null) $unset.gstRate = 1;
         else if (body.gstRate !== undefined) $set.gstRate = body.gstRate;
 
+        if (body.donationEnabled !== undefined) $set.donationEnabled = body.donationEnabled;
+        if (body.donationAmounts !== undefined) {
+            $set.donationAmounts = body.donationAmounts;
+            // Presets supersede the legacy single amount.
+            $unset.donationAmount = 1;
+        } else if (body.donationAmount === null) $unset.donationAmount = 1;
+        else if (body.donationAmount !== undefined) $set.donationAmount = body.donationAmount;
+
         if (body.gstOnDeliveryFee === null) $unset.gstOnDeliveryFee = 1;
         else if (body.gstOnDeliveryFee !== undefined) $set.gstOnDeliveryFee = body.gstOnDeliveryFee;
 
@@ -2069,6 +2078,9 @@ export async function upsertFeeSettings(body) {
     if (body.platformFee !== undefined && body.platformFee !== null) payload.platformFee = body.platformFee;
     if (body.packagingFee !== undefined && body.packagingFee !== null) payload.packagingFee = body.packagingFee;
     if (body.gstRate !== undefined && body.gstRate !== null) payload.gstRate = body.gstRate;
+    if (body.donationEnabled !== undefined) payload.donationEnabled = body.donationEnabled;
+    if (body.donationAmount !== undefined && body.donationAmount !== null) payload.donationAmount = body.donationAmount;
+    if (body.donationAmounts !== undefined) payload.donationAmounts = body.donationAmounts;
     if (body.gstOnDeliveryFee !== undefined && body.gstOnDeliveryFee !== null) payload.gstOnDeliveryFee = body.gstOnDeliveryFee;
     if (body.gstOnPlatformFee !== undefined && body.gstOnPlatformFee !== null) payload.gstOnPlatformFee = body.gstOnPlatformFee;
     if (body.gstOnPackagingFee !== undefined && body.gstOnPackagingFee !== null) payload.gstOnPackagingFee = body.gstOnPackagingFee;
@@ -5677,7 +5689,165 @@ export async function deleteSubAdmin(id) {
     return deleted !== null;
 }
 
+// ---- ported from legacy backend ----
+export async function getRestaurantComplaintStats(query = {}) {
+    const baseFilter = { type: 'order' };
+    if (query.complaintType && query.complaintType !== 'all') {
+        baseFilter.issueType = query.complaintType;
+    }
 
+    const [open, inProgress, resolved, total] = await Promise.all([
+        FoodSupportTicket.countDocuments({ ...baseFilter, status: 'open' }),
+        FoodSupportTicket.countDocuments({ ...baseFilter, status: 'in-progress' }),
+        FoodSupportTicket.countDocuments({ ...baseFilter, status: 'resolved' }),
+        FoodSupportTicket.countDocuments(baseFilter),
+    ]);
 
+    return { total, open, inProgress, resolved };
+}
 
+export async function getFoodSupportTicketStats(query = {}) {
+    const source = String(query.source || 'all').toLowerCase();
+    const type = query.type ? String(query.type) : '';
+    const category = query.category ? String(query.category) : '';
 
+    const userFilter = {};
+    const restaurantFilter = {};
+    if (type && ['order', 'restaurant', 'other'].includes(type)) {
+        userFilter.type = type;
+    }
+    if (category && ['orders', 'payments', 'menu', 'restaurant', 'technical', 'other'].includes(category)) {
+        restaurantFilter.category = category;
+    }
+
+    const shouldFetchUser = source === 'all' || source === 'user';
+    const shouldFetchRestaurant =
+        (source === 'all' || source === 'restaurant') && !type;
+
+    const countStatuses = async (model, filter) => {
+        const [open, inProgress, resolved, total] = await Promise.all([
+            model.countDocuments({ ...filter, status: 'open' }),
+            model.countDocuments({ ...filter, status: 'in-progress' }),
+            model.countDocuments({ ...filter, status: 'resolved' }),
+            model.countDocuments(filter),
+        ]);
+        return { open, inProgress, resolved, total };
+    };
+
+    const empty = { open: 0, inProgress: 0, resolved: 0, total: 0 };
+    const [userCounts, restaurantCounts] = await Promise.all([
+        shouldFetchUser ? countStatuses(FoodSupportTicket, userFilter) : Promise.resolve(empty),
+        shouldFetchRestaurant
+            ? countStatuses(FoodRestaurantSupportTicket, restaurantFilter)
+            : Promise.resolve(empty),
+    ]);
+
+    return {
+        total: userCounts.total + restaurantCounts.total,
+        open: userCounts.open + restaurantCounts.open,
+        inProgress: userCounts.inProgress + restaurantCounts.inProgress,
+        resolved: userCounts.resolved + restaurantCounts.resolved,
+    };
+}
+
+export async function getUnregisteredRestaurants() {
+    const list = await FoodUnregisteredRestaurant.find()
+        .sort({ createdAt: -1 })
+        .lean();
+    return list.map((item, index) => ({
+        ...item,
+        sl: index + 1
+    }));
+}
+
+export async function deleteUnregisteredRestaurant(id) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) throw new ValidationError('Invalid unregistered restaurant id');
+    const deleted = await FoodUnregisteredRestaurant.findByIdAndDelete(id).lean();
+    return deleted;
+}
+
+export async function bulkDeleteFoods({ restaurantId, foodIds = [], selectAll = false, search = '' }) {
+    if (!restaurantId || !mongoose.Types.ObjectId.isValid(restaurantId)) {
+        throw new ValidationError('Valid restaurantId is required');
+    }
+
+    const restaurant = await FoodRestaurant.findById(restaurantId).select('_id').lean();
+    if (!restaurant?._id) {
+        throw new ValidationError('Restaurant not found');
+    }
+
+    const filter = { restaurantId: new mongoose.Types.ObjectId(restaurantId) };
+
+    if (selectAll) {
+        const term = String(search || '').trim();
+        if (term) {
+            filter.$or = [
+                { name: { $regex: term, $options: 'i' } },
+                { categoryName: { $regex: term, $options: 'i' } },
+            ];
+        }
+    } else {
+        const ids = (Array.isArray(foodIds) ? foodIds : [])
+            .filter((id) => mongoose.Types.ObjectId.isValid(id))
+            .map((id) => new mongoose.Types.ObjectId(id));
+        if (ids.length === 0) {
+            throw new ValidationError('No valid food items selected');
+        }
+        filter._id = { $in: ids };
+    }
+
+    const result = await FoodItem.deleteMany(filter);
+
+    if (result.deletedCount > 0) {
+        try {
+            const { invalidateCache } = await import('../../../../middleware/cache.js');
+            await invalidateCache(`restaurant_menu:${restaurantId}`);
+        } catch (cacheErr) {
+            console.error('Failed to invalidate cache after bulk food delete:', cacheErr);
+        }
+    }
+
+    return { deletedCount: result.deletedCount };
+}
+
+export async function updateAdminOffer(id, body) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
+
+    if (body.couponCode) {
+        const existing = await FoodOffer.findOne({ 
+            couponCode: body.couponCode, 
+            _id: { $ne: new mongoose.Types.ObjectId(id) } 
+        }).lean();
+        if (existing) {
+            throw new ValidationError('Coupon code already exists');
+        }
+    }
+
+    const updateFields = {
+        couponCode: body.couponCode,
+        discountType: body.discountType,
+        discountValue: body.discountValue,
+        customerScope: body.customerScope,
+        restaurantScope: body.restaurantScope,
+        restaurantId: body.restaurantScope === 'selected' ? body.restaurantId : undefined,
+        restaurantIds: body.restaurantScope === 'selected' ? body.restaurantIds : [],
+        minOrderValue: body.minOrderValue ?? 0,
+        maxDiscount: body.maxDiscount ?? null,
+        usageLimit: body.usageLimit ?? null,
+        perUserLimit: body.perUserLimit ?? null,
+        startDate: body.startDate,
+        isFirstOrderOnly: body.isFirstOrderOnly ?? false,
+        endDate: body.endDate,
+        status: body.endDate && new Date(body.endDate).getTime() <= Date.now() ? 'inactive' : 'active',
+        adminBearPercentage: body.adminBearPercentage ?? 100,
+        restaurantBearPercentage: body.restaurantBearPercentage ?? 0
+    };
+
+    const updated = await FoodOffer.findByIdAndUpdate(
+        id,
+        { $set: updateFields },
+        { new: true }
+    ).lean();
+
+    return updated;
+}

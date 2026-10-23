@@ -4,6 +4,7 @@ import { FoodOtp } from './otp.model.js';
 import { config } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 import { ValidationError } from '../auth/errors.js';
+import { isPrpSmsConfigured, sendOtpViaPrpSms } from './prpSms.service.js';
 
 const generateOtpCode = () => {
     const code = crypto.randomInt(100000, 999999);
@@ -81,6 +82,9 @@ const sendSmsViaSmsWala = async (phone, otp) => {
     }
 };
 
+/** PRPSMS is the primary OTP sender; SMSWala is only used when PRPSMS is not configured. */
+const sendOtpSms = (phone, otp) => (isPrpSmsConfigured() ? sendOtpViaPrpSms(phone, otp) : sendSmsViaSmsWala(phone, otp));
+
 export const createOrUpdateOtp = async (phone) => {
     const existing = await FoodOtp.findOne({ phone });
     const now = new Date();
@@ -139,7 +143,7 @@ export const createOrUpdateOtp = async (phone) => {
 
     // Only send SMS if not in default OTP mode
     if (!config.useDefaultOtp && !phone.endsWith('9755633147') && !phone.endsWith('8624862400')) {
-        await sendSmsViaSmsWala(phone, otp);
+        await sendOtpSms(phone, otp);
     }
 
     return otp;

@@ -7,6 +7,8 @@ import { FoodRestaurant } from '../../restaurant/models/restaurant.model.js';
 import { FoodDeliveryPartner } from '../../delivery/models/deliveryPartner.model.js';
 import { FoodZone } from '../../admin/models/zone.model.js';
 import { FoodFeeSettings } from '../../admin/models/feeSettings.model.js';
+import { normalizeTipAmount } from '../helpers/tip.helper.js';
+import { resolveDonationAmount } from '../helpers/donation.helper.js';
 import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
 import { ValidationError, ForbiddenError, NotFoundError } from '../../../../core/auth/errors.js';
 import { buildPaginationOptions, buildPaginatedResult, parseQueryLimit, parseQueryPage } from '../../../../utils/helpers.js';
@@ -33,7 +35,8 @@ import * as foodTransactionService from './foodTransaction.service.js';
 import * as userWalletService from '../../user/services/userWallet.service.js';
 import * as financeService from './finance.service.js';
 import { withTransaction, sessionOpts } from '../../../../utils/dbTransaction.js';
-import { calculateOrderPricing } from './order-pricing.service.js';
+import { assertRestaurantOpenForOrdering } from '../../restaurant/helpers/restaurantAvailability.helper.js';
+import { calculateOrderPricing, enforceServerSidePricing } from './order-pricing.service.js';
 import * as dispatchService from './order-dispatch.service.js';
 import { clearDeliveryOffersForOrder } from './order-dispatch.firebase.js';
 import * as deliveryService from './order-delivery.service.js';
@@ -134,7 +137,7 @@ export async function calculateOrder(userId, dto) {
 // ----- Create order -----
 export async function createOrder(userId, dto) {
   const restaurant = await FoodRestaurant.findById(dto.restaurantId)
-    .select("status restaurantName zoneId location isAcceptingOrders")
+    .select("status restaurantName zoneId location isAcceptingOrders isActive openingTime closingTime openDays deliveryTimings")
     .lean();
   if (!restaurant) throw new ValidationError("Restaurant not found");
 
@@ -156,6 +159,16 @@ export async function createOrder(userId, dto) {
     throw new ValidationError("Restaurant not accepting orders");
   if (restaurant.isAcceptingOrders === false)
     throw new ValidationError("Restaurant not accepting orders");
+
+  // The restaurant must also be inside its opening hours (at the scheduled time for scheduled orders).
+  {
+    const requestedAt = dto.scheduledAt ? new Date(dto.scheduledAt) : new Date();
+    await assertRestaurantOpenForOrdering(
+      restaurant,
+      Number.isNaN(requestedAt.getTime()) ? new Date() : requestedAt,
+      { scheduled: Boolean(dto.scheduledAt) },
+    );
+  }
 
   // Check if delivery partners are available online in the zone (for immediate orders)
   if (!dto.scheduledAt) {
@@ -207,12 +220,15 @@ export async function createOrder(userId, dto) {
     if (!Number.isFinite(price) || !Number.isFinite(qty)) return sum;
     return sum + Math.max(0, price) * Math.max(0, qty);
   }, 0);
+  const activeFeeSettings = (await FoodFeeSettings.findOne({ isActive: true }).sort({ createdAt: -1 }).lean()) || {};
   const normalizedPricing = {
     subtotal: Number(dto.pricing?.subtotal ?? computedSubtotal),
     tax: Number(dto.pricing?.tax ?? 0),
     packagingFee: Number(dto.pricing?.packagingFee ?? 0),
     deliveryFee: Number(dto.pricing?.deliveryFee ?? 0),
     platformFee: Number(dto.pricing?.platformFee ?? 0),
+    tip: normalizeTipAmount(dto.pricing?.tip),
+    donation: resolveDonationAmount(activeFeeSettings, dto.pricing?.donation),
     discount: Number(dto.pricing?.discount ?? 0),
     total: Number(dto.pricing?.total ?? 0),
     currency: String(dto.pricing?.currency || "INR"),
@@ -231,7 +247,9 @@ export async function createOrder(userId, dto) {
         : 0) +
       (Number.isFinite(normalizedPricing.platformFee)
         ? normalizedPricing.platformFee
-        : 0) -
+        : 0) +
+      normalizedPricing.tip +
+      normalizedPricing.donation -
       (Number.isFinite(normalizedPricing.discount)
         ? normalizedPricing.discount
         : 0),
@@ -242,6 +260,9 @@ export async function createOrder(userId, dto) {
   ) {
     normalizedPricing.total = computedTotal;
   }
+
+  // Never trust client prices: validate the cart against the menu and correct any under-charge.
+  await enforceServerSidePricing(userId, dto, normalizedPricing);
 
   const payment = {
     method: paymentMethod,
@@ -2093,4 +2114,45 @@ export async function autoCancelUnresponsiveOrder(orderMongoId, reason = 'Restau
   return { success: true, order: normalizeOrderForClient(order) };
 }
 
+// ---- ported from legacy backend (adapted to the finance service) ----
+/**
+ * Customer closed the payment gateway without paying: cancel the unpaid online order right away
+ * instead of waiting for the 15 minute watchdog. Only an order that is still unpaid can be abandoned.
+ */
+export async function abandonOnlinePaymentOrder(userId, orderId) {
+  const identity = buildOrderIdentityFilter(orderId);
+  if (!identity) throw new ValidationError("Order id required");
 
+  const order = await FoodOrder.findOne({
+    ...identity,
+    userId: new mongoose.Types.ObjectId(userId),
+  })
+    .select("_id orderStatus payment")
+    .lean();
+  if (!order) throw new NotFoundError("Order not found");
+  if (String(order.payment?.method || "") !== "razorpay" || String(order.payment?.status || "") !== "created") {
+    throw new ValidationError("Order is not awaiting payment");
+  }
+
+  const now = new Date();
+  const claimed = await FoodOrder.findOneAndUpdate(
+    { _id: order._id, orderStatus: "created", "payment.status": "created" },
+    {
+      $set: { orderStatus: "cancelled_by_user" },
+      $push: {
+        statusHistory: {
+          at: now,
+          byRole: "USER",
+          byId: new mongoose.Types.ObjectId(userId),
+          from: "created",
+          to: "cancelled_by_user",
+          note: "Payment abandoned by customer",
+        },
+      },
+    },
+  );
+  if (!claimed) throw new ValidationError("Could not abandon payment");
+
+  await financeService.expireUnpaidOnlineOrder(order._id, { reason: "Payment abandoned by customer" });
+  return { deleted: true, orderId: order._id.toString() };
+}

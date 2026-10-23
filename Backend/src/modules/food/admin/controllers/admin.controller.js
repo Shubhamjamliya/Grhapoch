@@ -1,14 +1,23 @@
+import { getDonationReport as getDonationReportService } from '../services/donation.service.js';
 import mongoose from 'mongoose';
 import * as adminService from '../services/admin.service.js';
+import * as featureSettingsService from '../services/featureSettings.service.js';
 import { FoodRestaurant } from '../../restaurant/models/restaurant.model.js';
 import { validateCategoryListQuery, validateCategoryRejectDto, validateCategoryUpsertDto } from '../validators/category.validator.js';
-import { validateCreateOfferDto, validateUpdateOfferCartVisibilityDto } from '../validators/offer.validator.js';
+import { validateCreateOfferDto, validateUpdateOfferCartVisibilityDto, validateUpdateOfferDto } from '../validators/offer.validator.js';
 import { validateAddDeliveryBonusDto } from '../validators/deliveryBonus.validator.js';
 import { validateCheckCompletionsDto, validateEarningAddonHistoryActionDto, validateEarningAddonUpsertDto, validateToggleEarningAddonStatusDto } from '../validators/earningAddon.validator.js';
 import { validateDeliveryCommissionRuleDto, validateOptionalStatusDto, validateRestaurantCommissionUpsertDto } from '../validators/commission.validator.js';
 import { validateFeeSettingsUpsertDto } from '../validators/feeSettings.validator.js';
 import { validateDeliveryEmergencyHelpUpsertDto } from '../validators/deliveryEmergencyHelp.validator.js';
 import { validateReferralSettingsUpsertDto } from '../validators/referralSettings.validator.js';
+import {
+    deassignAndResendEmergencyOrder,
+    deassignAndResendOrderAdmin,
+    getOrderEmergencyRequestAdmin,
+    listOrderEmergencyRequestsAdmin,
+    updateOrderEmergencyRequestAdmin
+} from '../../delivery/services/orderEmergencyRequest.service.js';
 import { topupUserWalletByAdmin } from '../../user/services/userWallet.service.js';
 import { invalidateCache } from '../../../../middleware/cache.js';
 import { FoodBusinessSettings } from '../models/businessSettings.model.js';
@@ -1842,6 +1851,206 @@ export async function deleteSubAdmin(req, res, next) {
             return res.status(404).json({ success: false, message: 'Sub Admin not found' });
         }
         res.status(200).json({ success: true, message: 'Sub Admin deleted successfully' });
+    } catch (error) {
+        next(error);
+    }
+}
+
+// ---- ported from legacy backend ----
+export async function getRestaurantComplaintStatsController(req, res, next) {
+    try {
+        const data = await adminService.getRestaurantComplaintStats(req.query || {});
+        res.status(200).json({ success: true, message: 'Restaurant complaint stats fetched successfully', data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getFoodSupportTicketStatsController(req, res, next) {
+    try {
+        const data = await adminService.getFoodSupportTicketStats(req.query || {});
+        res.status(200).json({ success: true, message: 'Support ticket stats fetched successfully', data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getUnregisteredRestaurants(req, res, next) {
+    try {
+        const list = await adminService.getUnregisteredRestaurants();
+        res.status(200).json({
+            success: true,
+            message: 'Unregistered restaurants fetched successfully',
+            data: list
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function deleteUnregisteredRestaurant(req, res, next) {
+    try {
+        const { id } = req.params;
+        const result = await adminService.deleteUnregisteredRestaurant(id);
+        if (!result) {
+            return res.status(404).json({ success: false, message: 'Unregistered restaurant not found' });
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Unregistered restaurant deleted successfully',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function updateAdminOffer(req, res, next) {
+    try {
+        const { id } = req.params;
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: 'Invalid offer id' });
+        }
+        const body = validateUpdateOfferDto(req.body || {});
+        const updated = await adminService.updateAdminOffer(id, body);
+        if (!updated) {
+            return res.status(404).json({ success: false, message: 'Offer not found' });
+        }
+        res.status(200).json({ success: true, message: 'Offer updated successfully', data: { offer: updated } });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function bulkDeleteFoodItems(req, res, next) {
+    try {
+        const { restaurantId, foodIds, selectAll, search } = req.body || {};
+        const result = await adminService.bulkDeleteFoods({
+            restaurantId,
+            foodIds,
+            selectAll: selectAll === true,
+            search,
+        });
+        res.status(200).json({
+            success: true,
+            message: `Successfully deleted ${result.deletedCount} item(s)`,
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+// ----- Feature Settings -----
+export async function getFeatureSettings(req, res, next) {
+    try {
+        const data = await featureSettingsService.listFeatureSettings();
+        res.status(200).json({ success: true, message: 'Feature settings fetched successfully', data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function updateFeatureSetting(req, res, next) {
+    try {
+        const key = req.params?.key;
+        const data = await featureSettingsService.updateFeatureSetting(key, req.body || {});
+        if (!data) {
+            return res.status(404).json({ success: false, message: 'Feature not found' });
+        }
+        res.status(200).json({ success: true, message: 'Feature setting updated successfully', data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+// ----- Donations (admin) -----
+export async function getDonationReport(req, res, next) {
+    try {
+        const data = await getDonationReportService(req.query || {});
+        res.status(200).json({ success: true, message: 'Donations fetched successfully', data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getOrderEmergencyRequests(req, res, next) {
+    try {
+        const data = await listOrderEmergencyRequestsAdmin(req.query || {});
+        res.status(200).json({
+            success: true,
+            message: 'Order reassignment requests fetched successfully',
+            data
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getOrderEmergencyRequest(req, res, next) {
+    try {
+        const request = await getOrderEmergencyRequestAdmin(req.params.id);
+        if (!request) {
+            return res.status(404).json({
+                success: false,
+                message: 'Order reassignment request not found'
+            });
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Order reassignment request fetched successfully',
+            data: { request }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function updateOrderEmergencyRequest(req, res, next) {
+    try {
+        const request = await updateOrderEmergencyRequestAdmin(
+            req.params.id,
+            req.body || {}
+        );
+        res.status(200).json({
+            success: true,
+            message: 'Order reassignment request updated successfully',
+            data: { request }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function deassignAndResendOrderEmergencyRequest(req, res, next) {
+    try {
+        const result = await deassignAndResendEmergencyOrder(
+            req.params.id,
+            req.user?.userId
+        );
+        res.status(200).json({
+            success: true,
+            message: result.alreadyResolved
+                ? 'Order reassignment was already completed'
+                : 'Delivery partner deassigned and order dispatch restarted',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function deassignAndResendOrder(req, res, next) {
+    try {
+        const result = await deassignAndResendOrderAdmin(
+            req.params.orderId,
+            req.user?.userId
+        );
+        res.status(200).json({
+            success: true,
+            message: 'Delivery partner deassigned and order dispatch restarted',
+            data: result
+        });
     } catch (error) {
         next(error);
     }

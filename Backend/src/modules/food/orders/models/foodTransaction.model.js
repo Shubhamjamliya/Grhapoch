@@ -30,6 +30,8 @@ const foodTransactionSchema = new mongoose.Schema({
         packagingFee: { type: Number, default: 0 },
         deliveryFee: { type: Number, default: 0 },
         platformFee: { type: Number, default: 0 },
+        tip: { type: Number, default: 0 },
+        donation: { type: Number, default: 0 },
         restaurantCommission: { type: Number, default: 0 },
         discount: { type: Number, default: 0 },
         total: { type: Number, default: 0 },
@@ -67,6 +69,9 @@ const foodTransactionSchema = new mongoose.Schema({
         paymentGatewayFee: { type: Number, default: 0 },
         tcs: { type: Number, default: 0 },
         riderShare: { type: Number, required: true },
+        // Customer tip passed through to the rider (not platform revenue).
+        riderTip: { type: Number, default: 0 },
+        donationAmount: { type: Number, default: 0 },
         platformNetProfit: { type: Number, required: true },
         taxAmount: { type: Number, default: 0 }
     },
@@ -175,6 +180,7 @@ foodTransactionSchema.index(
 
 roundMoneyPaths(foodTransactionSchema, [
     'pricing.subtotal', 'pricing.tax', 'pricing.packagingFee', 'pricing.deliveryFee', 'pricing.platformFee',
+    'pricing.tip', 'pricing.donation', 'amounts.riderTip', 'amounts.donationAmount',
     'pricing.restaurantCommission', 'pricing.discount', 'pricing.total',
     'amounts.totalCustomerPaid', 'amounts.restaurantShare', 'amounts.restaurantCommission', 'amounts.gstOnItem',
     'amounts.gstOnCommission', 'amounts.paymentGatewayFee', 'amounts.tcs', 'amounts.riderShare',

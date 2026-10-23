@@ -39,6 +39,8 @@ const pricingSchema = z.object({
     packagingFee: z.number().min(0).optional(),
     deliveryFee: z.number().min(0).optional(),
     platformFee: z.number().min(0).optional(),
+    tip: z.number().min(0).optional(),
+    donation: z.number().min(0).optional(),
     discount: z.number().min(0).optional(),
     total: z.number().min(0),
     currency: z.string().optional()
@@ -61,6 +63,8 @@ export function validateCalculateOrderDto(body) {
         deliveryAddressId: z.string().nullable().optional(),
         zoneId: z.string().nullable().optional(),
         couponCode: z.string().nullable().optional(),
+        tip: z.coerce.number().min(0).optional(),
+        donation: z.coerce.number().min(0).optional(),
         deliveryFleet: z.string().nullable().optional()
     });
     const result = schema.safeParse(body);

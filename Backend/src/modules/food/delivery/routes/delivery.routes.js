@@ -21,7 +21,11 @@ import {
     getEarningsController, 
     getTripHistoryController, 
     getPocketDetailsController, 
-    getEmergencyHelpController, 
+    getEmergencyHelpController,
+    getTipsController,
+    listOrderEmergencyRequestsController,
+    createOrderEmergencyRequestController,
+    getOrderEmergencyRequestController,
     getCashLimitController, 
     getDeliveryReferralStatsController, 
     getActiveEarningAddonsController,
@@ -98,6 +102,10 @@ router.get('/trip-history', authMiddleware, requireRoles('DELIVERY_PARTNER'), ge
 router.getPocketDetailsController = getPocketDetailsController;
 router.get('/pocket-details', authMiddleware, requireRoles('DELIVERY_PARTNER'), getPocketDetailsController);
 router.get('/emergency-help', authMiddleware, requireRoles('DELIVERY_PARTNER'), getEmergencyHelpController);
+router.get('/tips', authMiddleware, requireRoles('DELIVERY_PARTNER'), getTipsController);
+router.get('/order-emergency-requests', authMiddleware, requireRoles('DELIVERY_PARTNER'), listOrderEmergencyRequestsController);
+router.post('/order-emergency-requests', authMiddleware, requireRoles('DELIVERY_PARTNER'), createOrderEmergencyRequestController);
+router.get('/order-emergency-requests/:id', authMiddleware, requireRoles('DELIVERY_PARTNER'), getOrderEmergencyRequestController);
 router.get('/cash-limit', authMiddleware, requireRoles('DELIVERY_PARTNER'), getCashLimitController);
 router.get('/referrals/stats', authMiddleware, requireRoles('DELIVERY_PARTNER'), getDeliveryReferralStatsController);
 

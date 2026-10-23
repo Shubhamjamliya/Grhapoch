@@ -10,6 +10,29 @@ import {
 } from '../controllers/heroBanner.controller.js';
 
 import {
+    listTopBannersController,
+    uploadTopBannersController,
+    deleteTopBannerController,
+    updateTopBannerOrderController,
+    toggleTopBannerStatusController
+} from '../controllers/topBanner.controller.js';
+import {
+    listHomePromotionBannersController,
+    createHomePromotionBannerController,
+    updateHomePromotionBannerController,
+    deleteHomePromotionBannerController,
+    toggleHomePromotionBannerStatusController,
+    updateHomePromotionBannerOrderController
+} from '../controllers/homePromotionBanner.controller.js';
+import {
+    listOtherAppsController,
+    createOtherAppController,
+    updateOtherAppController,
+    deleteOtherAppController,
+    toggleOtherAppStatusController,
+    updateOtherAppOrderController
+} from '../controllers/otherApp.controller.js';
+import {
     listUnder250BannersController,
     uploadUnder250BannersController,
     deleteUnder250BannerController,
@@ -41,7 +64,10 @@ import {
     getPublicDiningBannersController,
     getPublicExploreIconsController,
     getPublicGourmetController,
-    getPublicLandingSettingsController
+    getPublicLandingSettingsController,
+    getPublicTopBannersController,
+    getPublicHomePromotionBannersController,
+    getPublicOtherAppsController
 } from '../controllers/publicLanding.controller.js';
 import { detectZonePublicController, listZonesPublicController, listZonesNearbyPublicController } from '../controllers/zonePublic.controller.js';
 import { getPublicEnvController } from '../controllers/publicEnv.controller.js';
@@ -76,6 +102,37 @@ router.patch('/hero-banners/:id/order', updateHeroBannerOrderController);
 router.patch('/hero-banners/:id/status', toggleHeroBannerStatusController);
 router.patch('/hero-banners/:id/link-restaurants', linkRestaurantsToBannerController);
 
+
+// Admin top banners
+router.get('/top-banners', listTopBannersController);
+router.post(
+    '/top-banners/multiple',
+    upload.array('files'),
+    uploadTopBannersController
+);
+router.delete('/top-banners/:id', deleteTopBannerController);
+router.patch('/top-banners/:id/order', updateTopBannerOrderController);
+router.patch('/top-banners/:id/status', toggleTopBannerStatusController);
+
+// Admin Home Promotion banners
+router.get('/hero-banners/home-promotion', listHomePromotionBannersController);
+router.post(
+    '/hero-banners/home-promotion',
+    upload.single('file'),
+    createHomePromotionBannerController
+);
+router.patch('/hero-banners/home-promotion/:id', updateHomePromotionBannerController);
+router.delete('/hero-banners/home-promotion/:id', deleteHomePromotionBannerController);
+router.patch('/hero-banners/home-promotion/:id/status', toggleHomePromotionBannerStatusController);
+router.patch('/hero-banners/home-promotion/:id/order', updateHomePromotionBannerOrderController);
+
+// Admin Other Apps management
+router.get('/other-apps', listOtherAppsController);
+router.post('/other-apps', upload.single('image'), createOtherAppController);
+router.delete('/other-apps/:id', deleteOtherAppController);
+router.patch('/other-apps/:id/status', toggleOtherAppStatusController);
+router.patch('/other-apps/:id/order', updateOtherAppOrderController);
+router.patch('/other-apps/:id', upload.single('image'), updateOtherAppController);
 
 // Admin under 250 banners
 router.get('/hero-banners/under-250', listUnder250BannersController);
@@ -124,6 +181,9 @@ router.patch('/hero-banners/gourmet/:id/status', toggleGourmetStatusAdmin);
 
 // Public landing endpoints (Food user app)
 router.get('/hero-banners/public', getPublicHeroBannersController);
+router.get('/top-banners/public', getPublicTopBannersController);
+router.get('/other-apps/public', getPublicOtherAppsController);
+router.get('/hero-banners/home-promotion/public', getPublicHomePromotionBannersController);
 router.get('/hero-banners/under-250/public', getPublicUnder250BannersController);
 router.get('/hero-banners/ads/public', getPublicDiningBannersController);
 router.get('/explore-icons/public', getPublicExploreIconsController);

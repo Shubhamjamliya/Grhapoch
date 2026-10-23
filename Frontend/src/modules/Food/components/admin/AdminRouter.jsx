@@ -1,8 +1,9 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminLayout from "./AdminLayout";
 import Loader from "@food/components/Loader";
+import { adminAPI } from "@food/api";
 
 const AdminHome = lazy(() => import("@food/pages/admin/AdminHome"));
 const PointOfSale = lazy(() => import("@food/pages/admin/PointOfSale"));
@@ -134,6 +135,53 @@ const CleanDatabase = lazy(() => import("@food/pages/admin/system/CleanDatabase"
 const AddonActivation = lazy(() => import("@food/pages/admin/system/AddonActivation"));
 const LandingPageManagement = lazy(() => import("@food/pages/admin/system/LandingPageManagement"));
 const AppIntroAds = lazy(() => import("@food/pages/admin/advertisement/AppIntroAds"));
+// Restored from the legacy admin
+const UserCarts = lazy(() => import("@food/pages/admin/orders/UserCarts"));
+const Donations = lazy(() => import("@food/pages/admin/donations/Donations"));
+const UnregisteredRestaurants = lazy(() => import("@food/pages/admin/restaurant/UnregisteredRestaurants"));
+const RestaurantSubscriptionPlans = lazy(() => import("@food/pages/admin/restaurant/RestaurantSubscriptionPlans"));
+const RestaurantSettings = lazy(() => import("@food/pages/admin/restaurant/RestaurantSettings"));
+const AdBannerManagement = lazy(() => import("@food/pages/admin/system/AdBannerManagement"));
+const OtherAppsManagement = lazy(() => import("@food/pages/admin/system/OtherAppsManagement"));
+const FeatureSettings = lazy(() => import("@food/pages/admin/settings/FeatureSettings"));
+const OrderReassignmentRequests = lazy(() => import("@food/pages/admin/OrderReassignmentRequests"));
+const DeliveryLiveTracking = lazy(() => import("@food/pages/admin/delivery-partners/DeliveryLiveTracking"));
+
+const readFeatureFlag = async (key, fallback) => {
+  try {
+    const res = await adminAPI.getPublicFeatureSettings();
+    const rows = Array.isArray(res?.data?.data) ? res.data.data : [];
+    const feature = rows.find((row) => row.key === key);
+    if (!feature) return fallback;
+    const value = feature.isEnabled;
+    if (typeof value === "string") return value.trim().toLowerCase() === "true";
+    return Boolean(value);
+  } catch (_error) {
+    return fallback;
+  }
+};
+
+/** Renders children only while the given admin feature flag is enabled. */
+function FeatureFlagRouteGuard({ flag, defaultEnabled = false, redirectTo = "/admin/food", children }) {
+  const [loading, setLoading] = useState(true);
+  const [isEnabled, setIsEnabled] = useState(defaultEnabled);
+
+  useEffect(() => {
+    let active = true;
+    readFeatureFlag(flag, defaultEnabled).then((enabled) => {
+      if (!active) return;
+      setIsEnabled(enabled);
+      setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [flag, defaultEnabled]);
+
+  if (loading) return <Loader />;
+  if (!isEnabled) return <Navigate to={redirectTo} replace />;
+  return children;
+}
 const DiningManagement = lazy(() => import("@food/pages/admin/system/DiningManagement"));
 const DiningList = lazy(() => import("@food/pages/admin/system/DiningList"));
 const DiningRequests = lazy(() => import("@food/pages/admin/system/DiningRequests"));
@@ -244,6 +292,18 @@ export default function AdminRouter() {
             <Route path="advertisement" element={<AdsList />} />
             <Route path="advertisement/new" element={<NewAdvertisement />} />
             <Route path="advertisement/requests" element={<AdRequests />} />
+            <Route path="advertisement/banner-requests" element={<FeatureFlagRouteGuard flag="banner_advertising"><AdBannerManagement /></FeatureFlagRouteGuard>} />
+            <Route path="advertisement/restaurant/:subTab" element={<FeatureFlagRouteGuard flag="banner_advertising"><AdBannerManagement /></FeatureFlagRouteGuard>} />
+            <Route path="advertisement/user/:subTab" element={<FeatureFlagRouteGuard flag="banner_advertising"><AdBannerManagement /></FeatureFlagRouteGuard>} />
+            <Route path="orders/user-carts" element={<UserCarts />} />
+            <Route path="donations" element={<Donations />} />
+            <Route path="restaurants/unregistered" element={<FeatureFlagRouteGuard flag="root_landing_and_unregistered_control" defaultEnabled redirectTo="/admin/food/restaurants"><UnregisteredRestaurants /></FeatureFlagRouteGuard>} />
+            <Route path="restaurants/subscriptions" element={<RestaurantSubscriptionPlans />} />
+            <Route path="restaurants/settings" element={<RestaurantSettings />} />
+            <Route path="other-apps-management" element={<OtherAppsManagement />} />
+            <Route path="feature-settings" element={<FeatureSettings />} />
+            <Route path="delivery-order-reassignment-requests" element={<OrderReassignmentRequests />} />
+            <Route path="delivery-partners/live-tracking" element={<DeliveryLiveTracking />} />
             
             <Route path="chattings" element={<Chattings />} />
             <Route path="contact-messages" element={<ContactMessages />} />

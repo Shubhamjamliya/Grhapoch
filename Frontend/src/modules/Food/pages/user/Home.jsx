@@ -100,6 +100,7 @@ import PromoRow from "@food/components/user/home/PromoRow";
 import FestBanner from "@food/components/user/home/FestBanner";
 import chefMascot from "@food/assets/chef-mascot.png";
 import AdsBannerCarousel from "@food/components/user/home/AdsBannerCarousel";
+import HomeExtraSections from "@food/components/user/home/HomeExtraSections";
 import { getRestaurantDisplayName } from "@food/utils/restaurantDisplayName";
 import { primeOutletTimingsCache } from "@food/utils/outletTimingsCache";
 
@@ -2347,6 +2348,9 @@ export default function Home() {
                   loading={showBannerSkeleton}
                   shellRef={heroShellRef}
                 />
+
+                {/* Top banners, self-serve ads, promotion banners and other apps (admin managed) */}
+                <HomeExtraSections />
 
 
                 {/* Filters Sticky Sidebar Header */}

@@ -34,6 +34,14 @@ const businessSettingsSchema = new mongoose.Schema(
             url: { type: String, default: '' },
             publicId: { type: String, default: '' }
         },
+        restaurantFavicon: {
+            url: { type: String, default: '' },
+            publicId: { type: String, default: '' }
+        },
+        deliveryFavicon: {
+            url: { type: String, default: '' },
+            publicId: { type: String, default: '' }
+        },
         supportEmail: { type: String, default: 'support@tuggo.com' },
         supportPhone: { type: String, default: '+91 1234567890' },
         supportHours: { type: String, default: '24/7 Availability' },
@@ -41,6 +49,33 @@ const businessSettingsSchema = new mongoose.Schema(
             url: { type: String, default: '' },
             publicId: { type: String, default: '' }
         },
+        powerScanning: {
+            user: {
+                themeColor: { type: String, default: '#FA0272' },
+                fontFamily: { type: String, default: 'Poppins' }
+            },
+            restaurant: {
+                themeColor: { type: String, default: '#2563EB' },
+                fontFamily: { type: String, default: 'Poppins' }
+            },
+            delivery: {
+                themeColor: { type: String, default: '#00B761' },
+                fontFamily: { type: String, default: 'Poppins' }
+            }
+        },
+        orderAcceptanceTimeMinutes: { type: Number, default: 4, min: 1, max: 20 },
+        subscriptionExpiryAlert: {
+            daysBefore: { type: Number, default: 3, min: 1 },
+            messageTemplate: { type: String, default: "Your subscription plan '{planName}' is expiring in {daysRemaining} days. Please renew to keep enjoying commission-free orders." }
+        },
+        adBannerDays: { type: Number, default: 30 },
+        adBannerPrice: { type: Number, default: 2000 },
+        userAdBannerDays: { type: Number, default: 30 },
+        userAdBannerPrice: { type: Number, default: 2000 },
+        restaurantAdBannerDays: { type: Number, default: 30 },
+        restaurantAdBannerPrice: { type: Number, default: 2000 },
+        adBannerDailyPrice: { type: Number, default: 100 },
+        adBannerMonthlyPrice: { type: Number, default: 2500 },
         onlinePaymentOnly: { type: Boolean, default: false },
         maxCodAmount: { type: Number, default: 0 }, // 0 means no limit
         maintenanceMode: { type: Boolean, default: false },

@@ -1,5 +1,6 @@
 import { FoodOrder } from '../models/order.model.js';
 import { FoodRestaurantDelayAlertSettings } from '../../admin/models/restaurantDelayAlertSettings.model.js';
+import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
 import { triggerObdVoiceCall } from '../../../../services/obd.service.js';
 import { autoCancelUnresponsiveOrder } from './order.service.js';
 import { config } from '../../../../config/env.js';
@@ -12,13 +13,24 @@ let isPollingActive = false;
  */
 export async function getCallAlertConfig() {
     try {
-        const settings = await FoodRestaurantDelayAlertSettings.findOne({ key: 'global' }).lean();
+        const [settings, business] = await Promise.all([
+            FoodRestaurantDelayAlertSettings.findOne({ key: 'global' }).lean(),
+            FoodBusinessSettings.findOne().select('orderAcceptanceTimeMinutes').lean(),
+        ]);
         const obd = settings?.obdCallAlert;
+
+        // Admin "order acceptance time" (1-20 min): the restaurant must accept within this window.
+        // The call timings are squeezed to fit inside it so both calls happen before the deadline.
+        const acceptanceWindowMinutes = Math.min(20, Math.max(1, Number(business?.orderAcceptanceTimeMinutes) || 4));
+        const acceptanceWindowSeconds = acceptanceWindowMinutes * 60;
+        const configuredDelaySeconds = Math.max(1, Number(obd?.delayMinutes || 3)) * 60;
+        const configuredEscalationSeconds = Math.max(30, Number(obd?.escalationDelaySeconds || 90));
 
         return {
             enabled: obd?.enabled !== undefined ? Boolean(obd.enabled) : true,
-            delayMinutes: Math.max(1, Number(obd?.delayMinutes || 3)),
-            escalationDelaySeconds: Math.max(30, Number(obd?.escalationDelaySeconds || 90)),
+            acceptanceWindowSeconds,
+            delayMinutes: Math.min(configuredDelaySeconds, acceptanceWindowSeconds * 0.5) / 60,
+            escalationDelaySeconds: Math.max(15, Math.min(configuredEscalationSeconds, acceptanceWindowSeconds * 0.25)),
             voiceFile: String(obd?.voiceFile || config.obd?.voicefile || 'Ravi.wav').trim(),
             autoCancelEnabled: obd?.autoCancelEnabled !== undefined ? Boolean(obd.autoCancelEnabled) : true,
             autoCancelDelaySeconds: Math.max(30, Number(obd?.autoCancelDelaySeconds || 90))
@@ -27,6 +39,7 @@ export async function getCallAlertConfig() {
         logger.error(`[CallAlert] Error reading call alert config: ${err.message}`);
         return {
             enabled: true,
+            acceptanceWindowSeconds: null,
             delayMinutes: 3,
             escalationDelaySeconds: 90,
             voiceFile: config.obd?.voicefile || 'Ravi.wav',
@@ -265,6 +278,57 @@ export async function pollAndTriggerRestaurantCallAlerts() {
                 } else {
                     logger.error(`[CallAlert] Auto-cancel failed for order ${claimed._id}: ${cancelResult.error}`);
                     // Revert status lock if failed so it can be retried or inspected
+                    await FoodOrder.updateOne(
+                        { _id: claimed._id, 'callAlert.autoCancelStatus': 'in_progress' },
+                        { $set: { 'callAlert.autoCancelStatus': 'none' } }
+                    );
+                }
+            }
+        }
+
+        // ==========================================
+        // 4. ACCEPTANCE DEADLINE (admin "order acceptance time")
+        // Orders nobody accepted within the window are cancelled (and refunded) even if the call
+        // chain above has not finished. Scheduled orders are left to their own timing.
+        // ==========================================
+        if (alertConfig.autoCancelEnabled && alertConfig.acceptanceWindowSeconds) {
+            const deadlineCutoff = new Date(now - alertConfig.acceptanceWindowSeconds * 1000);
+
+            const overdueOrders = await FoodOrder.find({
+                orderStatus: 'created',
+                scheduledAt: null,
+                'payment.status': { $ne: 'created' }, // unpaid online orders are handled by the payment watchdog
+                createdAt: { $lte: deadlineCutoff, $gte: safetyMinDate },
+                'callAlert.autoCancelStatus': { $in: [null, 'none'] }
+            })
+                .select('_id order_id orderId')
+                .limit(10)
+                .lean();
+
+            for (const order of overdueOrders) {
+                const claimed = await FoodOrder.findOneAndUpdate(
+                    {
+                        _id: order._id,
+                        orderStatus: 'created',
+                        'callAlert.autoCancelStatus': { $in: [null, 'none'] }
+                    },
+                    { $set: { 'callAlert.autoCancelStatus': 'in_progress' } },
+                    { new: true }
+                );
+                if (!claimed) continue;
+
+                const minutes = Math.round(alertConfig.acceptanceWindowSeconds / 60);
+                logger.warn(`[CallAlert] Auto-cancelling order #${claimed.order_id || claimed._id}: not accepted within ${minutes} min`);
+
+                const cancelResult = await autoCancelUnresponsiveOrder(
+                    claimed._id,
+                    `Restaurant did not accept the order within ${minutes} minutes.`
+                );
+
+                if (cancelResult.success) {
+                    stats.autoCancelled = (stats.autoCancelled || 0) + 1;
+                } else {
+                    logger.error(`[CallAlert] Deadline auto-cancel failed for order ${claimed._id}: ${cancelResult.error}`);
                     await FoodOrder.updateOne(
                         { _id: claimed._id, 'callAlert.autoCancelStatus': 'in_progress' },
                         { $set: { 'callAlert.autoCancelStatus': 'none' } }

@@ -7,6 +7,10 @@ import { FoodOffer } from '../../admin/models/offer.model.js';
 import { FoodOfferUsage } from '../../admin/models/offerUsage.model.js';
 import { FoodZone } from '../../admin/models/zone.model.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
+import { logger } from '../../../../utils/logger.js';
+import { verifyOrderCartPrices } from '../helpers/order-cart-items.helper.js';
+import { normalizeTipAmount } from '../helpers/tip.helper.js';
+import { resolveDonationAmount } from '../helpers/donation.helper.js';
 import { haversineKm } from './order.helpers.js';
 import { getDrivingDistances } from '../../../../services/googleMaps.service.js';
 
@@ -331,7 +335,11 @@ export async function calculateOrderPricing(userId, dto) {
 
   const couponDiscount = discount;
   const totalDiscount = couponDiscount;
-  const totalBeforeDiscount = subtotal + deliveryFee + tax + platformFee + packagingFee;
+  // Tip is untaxed and passes 100% to the rider. Whole rupees, capped.
+  const tip = normalizeTipAmount(dto.tip);
+  // Donation is opt-in, untaxed, and goes to the platform. Must be one of the admin-configured presets.
+  const donation = resolveDonationAmount(feeSettings, dto.donation);
+  const totalBeforeDiscount = subtotal + deliveryFee + tax + platformFee + packagingFee + tip + donation;
   const total = Math.max(0, totalBeforeDiscount - totalDiscount);
 
   return {
@@ -349,6 +357,8 @@ export async function calculateOrderPricing(userId, dto) {
       deliveryFeeBreakdown: deliveryFeeBreakdown || undefined,
       freeDeliveryUpTo: Number.isFinite(freeUpTo) ? freeUpTo : undefined,
       platformFee,
+      tip,
+      donation,
       discount: totalDiscount,
       itemDiscount: itemDiscountTotal > 0 ? itemDiscountTotal : undefined,
       couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
@@ -359,4 +369,63 @@ export async function calculateOrderPricing(userId, dto) {
       couponError,
     },
   };
+}
+
+/**
+ * Server-side guard for order placement. The app sends its own prices and totals, so before an
+ * order is stored:
+ *  - every cart line must be priced at least what the menu + discounts allow (and still exist),
+ *  - fees and tax cannot be lower, and the coupon discount cannot be higher, than the server's own calculation,
+ *  - the total cannot be lower than the sum of its parts.
+ * Mutates `pricing` (the normalized order pricing) when it has to correct a value.
+ */
+export async function enforceServerSidePricing(userId, dto, pricing) {
+  const { serverSubtotal, totalQuantity } = await verifyOrderCartPrices(dto.restaurantId, dto.items);
+  if (Number(pricing.subtotal) < serverSubtotal - totalQuantity) {
+    throw new ValidationError('Item prices have changed. Please refresh your cart and try again.');
+  }
+
+  let server = null;
+  try {
+    const result = await calculateOrderPricing(userId, {
+      items: dto.items,
+      restaurantId: dto.restaurantId,
+      deliveryAddress: { location: dto.address?.location },
+      couponCode: dto.pricing?.couponCode,
+      tip: pricing.tip,
+      donation: pricing.donation,
+    });
+    server = result?.pricing || null;
+  } catch (err) {
+    logger.warn(`[Pricing] Server-side recalculation skipped: ${err?.message || err}`);
+  }
+
+  if (server) {
+    for (const key of ['tax', 'packagingFee', 'deliveryFee', 'platformFee']) {
+      const serverValue = Number(server[key]);
+      if (Number.isFinite(serverValue) && Number(pricing[key]) < serverValue - 1) {
+        pricing[key] = serverValue;
+      }
+    }
+    const serverDiscount = Number(server.discount) || 0;
+    if (Number(pricing.discount) > serverDiscount + 1) {
+      pricing.discount = serverDiscount;
+    }
+  }
+
+  const partsTotal = Math.max(
+    0,
+    (Number(pricing.subtotal) || 0) +
+      (Number(pricing.tax) || 0) +
+      (Number(pricing.packagingFee) || 0) +
+      (Number(pricing.deliveryFee) || 0) +
+      (Number(pricing.platformFee) || 0) +
+      (Number(pricing.tip) || 0) +
+      (Number(pricing.donation) || 0) -
+      (Number(pricing.discount) || 0),
+  );
+  if (!Number.isFinite(Number(pricing.total)) || Number(pricing.total) < partsTotal - 1) {
+    pricing.total = partsTotal;
+  }
+  return pricing;
 }

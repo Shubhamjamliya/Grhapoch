@@ -1,5 +1,10 @@
 import { getPublicGourmetRestaurants } from '../services/gourmet.service.js';
 import { getLandingSettings } from '../services/landingSettings.service.js';
+import { getPublicOtherApps } from '../services/otherApp.service.js';
+import { getPublicHomePromotionBanners } from '../services/homePromotionBanner.service.js';
+import TopBanner from '../models/topBanner.model.js';
+import AdBanner from '../models/adBanner.model.js';
+import { isFeatureEnabled } from '../../admin/services/featureSettings.service.js';
 import { FoodHeroBanner } from '../models/heroBanner.model.js';
 import { FoodUnder250Banner } from '../models/under250Banner.model.js';
 import { FoodDiningBanner } from '../models/diningBanner.model.js';
@@ -139,6 +144,67 @@ export const getPublicLandingSettingsController = async (req, res, next) => {
             recommendedRestaurants
         };
         return sendResponse(res, 200, 'Landing settings fetched', payload);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getPublicTopBannersController = async (req, res, next) => {
+    try {
+        const docs = await TopBanner.find({ isActive: true }).sort('order').lean();
+        
+        const isAdEnabled = await isFeatureEnabled('banner_advertising', false);
+        let mappedAds = [];
+        if (isAdEnabled) {
+            const now = new Date();
+            const activeAds = await AdBanner.find({
+                status: 'approved',
+                paymentStatus: 'paid',
+                startDate: { $lte: now },
+                endDate: { $gte: now }
+            }).lean();
+
+            mappedAds = activeAds.map(ad => ({
+                _id: ad._id,
+                image: ad.image,
+                order: 999,
+                isActive: true,
+                isAd: true,
+                targetType: ad.targetType,
+                targetId: ad.targetId || (ad.targetType === 'restaurant' && ad.requesterType === 'FoodRestaurant' ? ad.requesterId.toString() : ''),
+                targetUrl: ad.targetUrl,
+                startDate: ad.startDate,
+                endDate: ad.endDate,
+                createdAt: ad.createdAt,
+                updatedAt: ad.updatedAt
+            }));
+        }
+
+        return sendResponse(res, 200, 'Top banners fetched', { banners: docs, ads: mappedAds });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getPublicHomePromotionBannersController = async (req, res, next) => {
+    try {
+        const banners = await getPublicHomePromotionBanners();
+        return sendResponse(res, 200, 'Home promotion banners fetched', { banners });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getPublicOtherAppsController = async (req, res, next) => {
+    try {
+        const docs = await getPublicOtherApps();
+        const items = docs.map(({ sortOrder, iconUrl, ...rest }) => ({
+            ...rest,
+            iconUrl,
+            imageUrl: iconUrl,
+            order: sortOrder
+        }));
+        return sendResponse(res, 200, 'Other apps fetched', { items });
     } catch (error) {
         next(error);
     }

@@ -1,5 +1,10 @@
 import { sendResponse } from '../../../../utils/response.js';
 import * as orderService from '../services/order.service.js';
+import * as financeService from '../services/finance.service.js';
+import { toPaise } from '../../../../utils/money.js';
+import { NotFoundError } from '../../../../core/auth/errors.js';
+import { FoodOrder } from '../models/order.model.js';
+import { buildOrderIdentityFilter } from '../services/order.helpers.js';
 import * as foodOrderPaymentService from '../services/foodOrderPayment.service.js';
 import { checkRidersAvailabilityInZone } from '../services/order-dispatch.service.js';
 import {
@@ -454,3 +459,65 @@ export async function resendDeliveryNotificationAdminController(req, res, next) 
     }
 }
 
+// ---- ported from legacy backend (admin order actions, routed through the finance service) ----
+export async function acceptOrderAdminController(req, res, next) {
+    try {
+        const order = await orderService.updateOrderStatusAdmin(req.params.orderId, req.user?.userId, 'confirmed', 'Order accepted by admin');
+        return sendResponse(res, 200, 'Order accepted by admin', { order });
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function rejectOrderAdminController(req, res, next) {
+    try {
+        const { reason } = req.body || {};
+        const order = await orderService.updateOrderStatusAdmin(req.params.orderId, req.user?.userId, 'cancelled_by_admin', reason || 'Order rejected by admin');
+        return sendResponse(res, 200, 'Order rejected by admin', { order });
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function markOrderDeliveredAdminController(req, res, next) {
+    try {
+        const { note } = req.body || {};
+        const order = await orderService.updateOrderStatusAdmin(req.params.orderId, req.user?.userId, 'delivered', note || 'Order marked as delivered by admin');
+        return sendResponse(res, 200, 'Order marked as delivered', { order });
+    } catch (err) {
+        next(err);
+    }
+}
+
+/** Admin refund: full when no amount is sent; a partial refund is made idempotent per order + amount. */
+export async function processRefundAdminController(req, res, next) {
+    try {
+        const adminId = req.user?.userId;
+        const identity = buildOrderIdentityFilter(req.params.orderId);
+        const orderDoc = identity ? await FoodOrder.findOne(identity).select('_id').lean() : null;
+        if (!orderDoc) throw new NotFoundError('Order not found');
+        const orderId = String(orderDoc._id);
+        const { amount, reason, destination, idempotencyKey } = req.body || {};
+        const hasAmount = amount !== undefined && amount !== null && amount !== '';
+        const result = await financeService.refundOrder(orderId, {
+            destination,
+            amount: hasAmount ? Number(amount) : undefined,
+            reason: reason || 'Refund processed by admin',
+            actor: { role: 'ADMIN', id: adminId },
+            source: 'admin_refund',
+            idempotencyKey: hasAmount ? (idempotencyKey || `admin_refund:${orderId}:${toPaise(amount)}`) : idempotencyKey
+        });
+        return sendResponse(res, 200, 'Refund processed', result);
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function abandonOnlinePaymentController(req, res, next) {
+    try {
+        const result = await orderService.abandonOnlinePaymentOrder(req.user?.userId, req.params.orderId);
+        return sendResponse(res, 200, 'Payment abandoned', result);
+    } catch (err) {
+        next(err);
+    }
+}

@@ -44,6 +44,7 @@ export const adminSidebarMenu = [
           { label: "Payment Failed", path: "/admin/food/orders/payment-failed" },
           { label: "Refunded", path: "/admin/food/orders/refunded" },
           { label: "Offline Payments", path: "/admin/food/orders/offline-payments" },
+          { label: "User Carts", path: "/admin/food/orders/user-carts" },
         ],
       },
       {
@@ -110,6 +111,9 @@ export const adminSidebarMenu = [
           { label: "Restaurant Reviews", path: "/admin/food/restaurants/reviews" },
           { label: "Restaurant Complaints", path: "/admin/food/restaurants/complaints" },
           { label: "Restaurant Payouts", path: "/admin/food/restaurant-payouts" },
+          { label: "Unregistered Restaurants", path: "/admin/food/restaurants/unregistered" },
+          { label: "Restaurant Settings", path: "/admin/food/restaurants/settings" },
+          { label: "Subscriptions", path: "/admin/food/restaurants/subscriptions" },
         ],
       },
       {
@@ -170,6 +174,7 @@ export const adminSidebarMenu = [
       { type: "link", label: "Delivery Boy Commission", path: "/admin/food/delivery-boy-commission", icon: "DollarSign" },
       { type: "link", label: "Delivery Emergency Help", path: "/admin/food/delivery-emergency-help", icon: "Phone" },
       { type: "link", label: "Delivery Support Tickets", path: "/admin/food/delivery-support-tickets", icon: "MessageSquare" },
+      { type: "link", label: "Order Reassignment Requests", path: "/admin/food/delivery-order-reassignment-requests", icon: "AlertTriangle" },
       {
         type: "expandable",
         label: "Deliveryman",
@@ -182,6 +187,7 @@ export const adminSidebarMenu = [
           { label: "Earning Addon", path: "/admin/food/delivery-partners/earning-addon" },
           { label: "Earning Addon History", path: "/admin/food/delivery-partners/earning-addon-history" },
           { label: "Delivery Earning", path: "/admin/food/delivery-partners/earnings" },
+          { label: "Live Tracking", path: "/admin/food/delivery-partners/live-tracking" },
         ],
       },
     ],
@@ -192,6 +198,13 @@ export const adminSidebarMenu = [
     items: [
       { type: "link", label: "User Feedback", path: "/admin/food/contact-messages", icon: "Mail" },
       { type: "link", label: "Safety Emergency Reports", path: "/admin/food/safety-emergency-reports", icon: "AlertTriangle" },
+    ],
+  },
+  {
+    type: "section",
+    label: "DONATIONS",
+    items: [
+      { type: "link", label: "Donations", path: "/admin/food/donations", icon: "Gift" },
     ],
   },
   {
@@ -230,6 +243,37 @@ export const adminSidebarMenu = [
     items: [
       { type: "link", label: "App Intro & Ads", path: "/admin/food/app-intro-ads", icon: "Image" },
       { type: "link", label: "Landing Page Management", path: "/admin/food/hero-banner-management", icon: "Image" },
+      { type: "link", label: "Other Apps Management", path: "/admin/food/other-apps-management", icon: "Smartphone" },
+    ],
+  },
+  {
+    type: "section",
+    label: "BANNER ADVERTISING",
+    items: [
+      {
+        type: "expandable",
+        label: "Restaurant Banner Ads",
+        icon: "Image",
+        subItems: [
+          { label: "Pending Requests", path: "/admin/food/advertisement/restaurant/requests" },
+          { label: "Active Ads", path: "/admin/food/advertisement/restaurant/active" },
+          { label: "Rejected Ads", path: "/admin/food/advertisement/restaurant/rejected" },
+          { label: "History", path: "/admin/food/advertisement/restaurant/history" },
+          { label: "Ads Settings", path: "/admin/food/advertisement/restaurant/settings" },
+        ],
+      },
+      {
+        type: "expandable",
+        label: "User Banner Ads",
+        icon: "Image",
+        subItems: [
+          { label: "Pending Requests", path: "/admin/food/advertisement/user/requests" },
+          { label: "Active Ads", path: "/admin/food/advertisement/user/active" },
+          { label: "Rejected Ads", path: "/admin/food/advertisement/user/rejected" },
+          { label: "History", path: "/admin/food/advertisement/user/history" },
+          { label: "Ads Settings", path: "/admin/food/advertisement/user/settings" },
+        ],
+      },
     ],
   },
   /* {
@@ -257,6 +301,7 @@ export const adminSidebarMenu = [
       { type: "link", label: "Toggle Management", path: "/admin/food/toggle-management", icon: "ToggleLeft" },
       { type: "link", label: "Business Setup", path: "/admin/food/business-setup", icon: "Settings" },
       { type: "link", label: "Theme Settings", path: "/admin/food/theme-settings", icon: "Palette" },
+      { type: "link", label: "Feature Settings", path: "/admin/food/feature-settings", icon: "Settings" },
     ],
   },
   {

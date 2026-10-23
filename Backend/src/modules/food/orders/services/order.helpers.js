@@ -502,3 +502,42 @@ export function isStatusAdvance(current, next) {
 
   return nextPrio > currentPrio;
 }
+
+// ---- ported from legacy backend ----
+export const CANCELLED_ORDER_STATUSES = [
+  "cancelled_by_user",
+  "cancelled_by_restaurant",
+  "cancelled_by_admin",
+];
+
+export const normalizeOrderStatusValue = (value) => {
+  const status = String(value || "").trim().toLowerCase();
+  if (!status) return "";
+  return status.replace(/^canceled/, "cancelled");
+};
+
+export const isCancelledOrderStatus = (value) => {
+  const status = normalizeOrderStatusValue(value);
+  if (!status) return false;
+  if (CANCELLED_ORDER_STATUSES.includes(status)) return true;
+  if (status === "cancelled" || status === "canceled") return true;
+  return status.startsWith("cancelled_by_") || status.startsWith("canceled_by_");
+};
+
+export const isCancelledOrder = (order) => {
+  if (
+    isCancelledOrderStatus(order?.orderStatus) ||
+    isCancelledOrderStatus(order?.status)
+  ) {
+    return true;
+  }
+
+  const history = Array.isArray(order?.statusHistory) ? order.statusHistory : [];
+  const cancellationEntry = [...history]
+    .reverse()
+    .find((entry) => String(entry?.to || "").toLowerCase().includes("cancel"));
+
+  return Boolean(
+    cancellationEntry && isCancelledOrderStatus(cancellationEntry.to),
+  );
+};

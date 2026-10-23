@@ -682,6 +682,81 @@ export const adminAPI = {
     adminClient.patch("/food/admin/business-settings/toggles", body ?? {}),
   getDailySales: (date) =>
     adminClient.get("/food/admin/daily-sales", { params: { date } }),
+  // ---- ported from legacy frontend ----
+  getPublicFeatureSettings: (config = {}) =>
+    apiClient.get("/food/admin/feature-settings/public", config),
+  getOrderEmergencyRequests: (params = {}) =>
+    adminClient.get("/food/admin/delivery/order-emergency-requests", {
+      params,
+    }),
+  getOrderEmergencyRequestById: (id) =>
+    adminClient.get(
+      `/food/admin/delivery/order-emergency-requests/${String(id)}`,
+    ),
+  updateOrderEmergencyRequest: (id, body = {}) =>
+    adminClient.patch(
+      `/food/admin/delivery/order-emergency-requests/${String(id)}`,
+      body,
+    ),
+  deassignAndResendEmergencyOrder: (id) =>
+    adminClient.patch(
+      `/food/admin/delivery/order-emergency-requests/${String(id)}/deassign-resend`,
+      {},
+    ),
+  /** Donations report (admin) */
+  getDonations: (params = {}) =>
+    adminClient.get("/food/admin/donations", { params }),
+  getUserCarts: (params = {}) =>
+    adminClient.get("/food/admin/orders/user-carts", {
+      params: { limit: 20, page: 1, ...params },
+    }),
+  getUserCartPricing: (cartId) =>
+    adminClient.get(`/food/admin/orders/user-carts/${String(cartId)}/pricing`),
+  getRestaurantOrderAcceptanceSettings: () =>
+    adminClient.get("/food/admin/restaurant-settings/order-acceptance"),
+  updateRestaurantOrderAcceptanceSettings: (body = {}) =>
+    adminClient.patch("/food/admin/restaurant-settings/order-acceptance", body ?? {}),
+  getRestaurantSubscriptionSettings: () =>
+    adminClient.get("/food/admin/restaurant-subscription-settings"),
+  updateRestaurantSubscriptionSettings: (body) =>
+    adminClient.patch("/food/admin/restaurant-subscription-settings", body ?? {}),
+  getRestaurantSubscriptionPlans: (params = {}) =>
+    adminClient.get("/food/admin/restaurant-subscription-plans", {
+      params,
+    }),
+  getRestaurantSubscriptionPlanById: (id) =>
+    adminClient.get(`/food/admin/restaurant-subscription-plans/${String(id)}`),
+  createRestaurantSubscriptionPlan: (body) =>
+    adminClient.post("/food/admin/restaurant-subscription-plans", body ?? {}),
+  updateRestaurantSubscriptionPlan: (id, body) =>
+    adminClient.patch(
+      `/food/admin/restaurant-subscription-plans/${String(id)}`,
+      body ?? {},
+    ),
+  deleteRestaurantSubscriptionPlan: (id) =>
+    adminClient.delete(`/food/admin/restaurant-subscription-plans/${String(id)}`),
+  getRestaurantSubscriptions: (params = {}) =>
+    adminClient.get("/food/admin/restaurant-subscriptions", {
+      params,
+    }),
+  getUnregisteredRestaurants: () =>
+    adminClient.get("/food/admin/restaurants/unregistered"),
+  deleteUnregisteredRestaurant: (id) =>
+    adminClient.delete(`/food/admin/restaurants/unregistered/${id}`),
+  getFeatureSettings: () =>
+    adminClient.get("/food/admin/feature-settings"),
+  updateFeatureSetting: (key, body) =>
+    adminClient.patch(`/food/admin/feature-settings/${String(key)}`, body ?? {}),
+  getPowerScanningSettings: () =>
+    adminClient.get("/food/admin/power-scanning"),
+  updatePowerScanningSettings: (body = {}) =>
+    adminClient.patch("/food/admin/power-scanning", body ?? {}),
+  getAdBannerRequests: () =>
+    adminClient.get("/food/advertising/admin/requests"),
+  approveAdBannerRequest: (id) =>
+    adminClient.patch(`/food/advertising/admin/${id}/approve`),
+  rejectAdBannerRequest: (id, reason) =>
+    adminClient.patch(`/food/advertising/admin/${id}/reject`, { reason }),
 };
 
 /** Restaurant API - OTP login via new backend; no email/password. */
@@ -1111,6 +1186,25 @@ export const restaurantAPI = {
   /** DELETE /food/restaurant/account - permanently delete restaurant account */
   deleteAccount: () =>
     restaurantClient.delete("/food/restaurant/account"),
+  // ---- ported from legacy frontend ----
+  getAdPricing: () =>
+    restaurantClient.get("/food/advertising/pricing?type=restaurant"),
+  requestAdCampaign: (body) =>
+    restaurantClient.post("/food/advertising/request", body),
+  verifyAdPayment: (body) =>
+    restaurantClient.post("/food/advertising/verify", body),
+  cancelAdCampaign: (id) =>
+    restaurantClient.post(`/food/advertising/${id}/cancel`),
+  getMyAdCampaigns: () =>
+    restaurantClient.get("/food/advertising/my-ads"),
+  getSubscriptionPlans: () =>
+    restaurantClient.get("/food/restaurant/subscription-plans"),
+  getCurrentSubscription: () =>
+    restaurantClient.get("/food/restaurant/subscription/current"),
+  subscribeToPlan: (planId) =>
+    restaurantClient.post("/food/restaurant/subscription/subscribe", { planId }),
+  verifySubscriptionPayment: (body) =>
+    restaurantClient.post("/food/restaurant/subscription/verify", body ?? {}),
 };
 
 function stableStringify(value) {
@@ -1758,6 +1852,13 @@ export const deliveryAPI = {
   /** DELETE /food/delivery/account - permanently delete delivery partner account */
   deleteAccount: () =>
     deliveryClient.delete("/food/delivery/account"),
+  // ---- ported from legacy frontend ----
+  getOrderEmergencyRequests: () =>
+    deliveryClient.get("/food/delivery/order-emergency-requests"),
+  createOrderEmergencyRequest: (body = {}) =>
+    deliveryClient.post("/food/delivery/order-emergency-requests", body),
+  getOrderEmergencyRequestById: (id) =>
+    deliveryClient.get(`/food/delivery/order-emergency-requests/${String(id)}`),
 };
 
 export const userAPI = {
@@ -1906,6 +2007,26 @@ export const userAPI = {
   /** DELETE /food/user/account - permanently delete user account */
   deleteAccount: () =>
     userClient.delete("/food/user/account"),
+  // ---- ported from legacy frontend ----
+  getAdPricing: () =>
+    userClient.get("/food/advertising/pricing?type=user"),
+  requestAdCampaign: (body) =>
+    userClient.post("/food/advertising/request", body),
+  verifyAdPayment: (body) =>
+    userClient.post("/food/advertising/verify", body),
+  cancelAdCampaign: (id) =>
+    userClient.post(`/food/advertising/${id}/cancel`),
+  getMyAdCampaigns: () =>
+    userClient.get("/food/advertising/my-ads"),
+  // ---- ported from legacy frontend ----
+  /** PUT /food/user/cart (Bearer USER) */
+  syncCart: (body) =>
+    userClient.put("/food/user/cart", body ?? {}),
+  /**
+   * Legacy UI compatibility: update "current user location".
+   * We already persist the user's selected location in localStorage in the UI.
+   * Keep this as a no-op success so existing flows don't break.
+   */
 };
 export const locationAPI = {
   /** GET /food/location/reverse-geocode?lat=&lng= (public) */

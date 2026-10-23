@@ -14,8 +14,10 @@ import notificationRoutes from '../core/notifications/notification.routes.js';
 import { authMiddleware } from '../core/auth/auth.middleware.js';
 import * as businessSettingsController from '../modules/food/admin/controllers/businessSettings.controller.js';
 import { requireRoles } from '../core/roles/role.middleware.js';
+import * as adminController from '../modules/food/admin/controllers/admin.controller.js';
 import { getQueuesController } from '../controllers/admin.controller.js';
 import webhookRoutes from '../core/payments/routes/webhook.routes.js';
+import advertisingRoutes from '../modules/food/landing/routes/adBanner.routes.js';
 import searchRoutes from '../modules/food/search/routes/search.routes.js';
 import appConfigRoutes from '../core/appConfig/appConfig.routes.js';
 import promocodeRoutes from './promocodeRoutes.js';
@@ -43,6 +45,7 @@ router.use('/v1/food/delivery', deliveryRoutes);
 router.use('/v1/driver', deliveryRoutes);
 router.use('/v1/food/restaurant', restaurantRoutes);
 router.use('/v1/food', landingRoutes);
+router.use('/v1/food/advertising', advertisingRoutes);
 router.use('/v1/food/search', searchRoutes);
 router.use('/v1/food/promocodes', promocodeRoutes);
 router.get('/v1/food/dining/categories/public', getPublicDiningCategories);
@@ -60,6 +63,8 @@ router.use('/v1/uploads', uploadRoutes);
 
 // Mark business-settings/public as truly public
 router.get('/v1/food/admin/business-settings/public', businessSettingsController.getBusinessSettings);
+router.get('/v1/food/admin/power-scanning/public', businessSettingsController.getPowerScanningSettings);
+router.get('/v1/food/admin/feature-settings/public', adminController.getFeatureSettings);
 
 router.use('/v1/food/admin/env', envSettingRoutes);
 router.use('/v1/food/admin', authMiddleware, requireRoles('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN'), restaurantAdminRoutes);

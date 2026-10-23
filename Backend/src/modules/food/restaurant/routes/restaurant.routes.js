@@ -17,7 +17,9 @@ import {
     uploadRestaurantMenuImagesController,
     getRestaurantComplaintsController,
     createDiningRequestController,
-    getPendingDiningRequestController
+    getPendingDiningRequestController,
+    registerUnregisteredRestaurantController,
+    uploadRestaurantAttachmentController
 } from '../controllers/restaurant.controller.js';
 import {
     createRestaurantSupportTicketController,
@@ -53,6 +55,13 @@ import {
     updateAddonController,
     deleteAddonController
 } from '../controllers/restaurantAddon.controller.js';
+import {
+    getSubscriptionPlansController as listActiveSubPlans,
+    getCurrentSubscriptionController as getMyCurrentSub,
+    subscribeToPlanController as createSubOrder,
+    verifySubscriptionPaymentController as verifySubPayment
+} from '../controllers/restaurantSubscription.controller.js';
+import { listPublicFoodsController } from '../controllers/publicFoods.controller.js';
 import * as orderController from '../../orders/controllers/order.controller.js';
 import { downloadRestaurantMenuPdf } from '../../admin/controllers/admin.controller.js';
 import { authMiddleware } from '../../../../core/auth/auth.middleware.js';
@@ -91,6 +100,9 @@ router.get('/restaurants/:id/outlet-timings', cacheResponse(600, 'restaurant_tim
 router.get('/offers', cacheResponse(300, 'offers'), listPublicOffersController);
 // Public: categories list (zone-aware; returns zone categories + global)
 router.get('/categories/public', cacheResponse(600, 'categories'), listCategoriesController);
+router.post('/unregistered', registerUnregisteredRestaurantController);
+router.post('/upload-attachment', upload.single('file'), uploadRestaurantAttachmentController);
+router.get('/public/foods', cacheResponse(300, 'public_foods'), listPublicFoodsController);
 router.get('/foods/public', cacheResponse(300, 'foods'), listPublicApprovedFoodsController);
 
 // Restaurant dashboard/profile (Bearer token + RESTAURANT role)
@@ -112,6 +124,11 @@ router.post('/dining-settings/request', authMiddleware, requireRestaurant, creat
 router.get('/dining-settings/pending', authMiddleware, requireRestaurant, getPendingDiningRequestController);
 router.get('/outlet-timings', authMiddleware, requireRestaurant, getCurrentRestaurantOutletTimingsController);
 router.put('/outlet-timings', authMiddleware, requireRestaurant, upsertCurrentRestaurantOutletTimingsController);
+// ----- Subscription plans (commission-free / reduced commission) -----
+router.get('/subscription-plans', authMiddleware, requireRestaurant, listActiveSubPlans);
+router.get('/subscription/current', authMiddleware, requireRestaurant, getMyCurrentSub);
+router.post('/subscription/subscribe', authMiddleware, requireRestaurant, moneyRateLimiter, createSubOrder);
+router.post('/subscription/verify', authMiddleware, requireRestaurant, moneyRateLimiter, verifySubPayment);
 router.get('/finance', authMiddleware, requireRestaurant, getRestaurantFinanceController);
 router.get('/dashboard-stats', authMiddleware, requireRestaurant, getRestaurantDashboardStatsController);
 router.post('/withdraw', authMiddleware, requireRestaurant, moneyRateLimiter, createWithdrawalRequestController);

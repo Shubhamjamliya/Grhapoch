@@ -19,7 +19,9 @@ import {
     getPendingDiningRequest
 } from '../../dining/services/dining.service.js';
 import { validateRestaurantRegisterDto } from '../validators/restaurant.validator.js';
-import { sendResponse } from '../../../../utils/response.js';
+import { sendResponse, sendError } from '../../../../utils/response.js';
+import { FoodUnregisteredRestaurant } from '../models/unregisteredRestaurant.model.js';
+import { uploadGenericImage } from '../../../../services/upload.service.js';
 import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
 import { sendRestaurantOnboardingEmail } from '../../../../utils/email.js';
 
@@ -203,3 +205,36 @@ export const getPendingDiningRequestController = async (req, res, next) => {
     }
 };
 
+// ---- ported from legacy backend ----
+/** Public lead capture: a restaurant that wants to join but has not completed registration. */
+export const registerUnregisteredRestaurantController = async (req, res, next) => {
+    try {
+        const { ownerName, restaurantName, mobileNumber, emailId, location } = req.body;
+        if (!ownerName || !restaurantName || !mobileNumber || !emailId || !location) {
+            return sendError(res, 400, 'All fields are required');
+        }
+        const newUnregistered = await FoodUnregisteredRestaurant.create({
+            ownerName,
+            restaurantName,
+            mobileNumber,
+            emailId,
+            location
+        });
+        return sendResponse(res, 201, 'Restaurant details submitted successfully', newUnregistered);
+    } catch (error) {
+        next(error);
+    }
+};
+
+const ATTACHMENT_FOLDERS = ['profile', 'pan', 'gst', 'fssai', 'menu'];
+
+export const uploadRestaurantAttachmentController = async (req, res, next) => {
+    try {
+        if (!req.file?.buffer) return sendError(res, 400, 'File is required for upload');
+        const type = ATTACHMENT_FOLDERS.includes(req.body?.folder) ? req.body.folder : 'others';
+        const url = await uploadGenericImage(req.file.buffer, `restaurant-${type}`);
+        return sendResponse(res, 200, 'Image uploaded successfully', { url });
+    } catch (error) {
+        next(error);
+    }
+};
