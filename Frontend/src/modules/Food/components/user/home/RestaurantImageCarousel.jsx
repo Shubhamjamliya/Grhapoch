@@ -1,0 +1,744 @@
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
+import { foodImages } from "@food/constants/images";
+
+const WEBVIEW_SESSION_CACHE_BUSTER = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const RestaurantCarouselStateContext = createContext(null);
+
+export function RestaurantCarouselStateProvider({ children }) {
+  const [activeSlide, setActiveSlide] = useState(null);
+  const value = useMemo(() => ({ activeSlide, setActiveSlide }), [activeSlide]);
+
+  return (
+    <RestaurantCarouselStateContext.Provider value={value}>
+      {children}
+    </RestaurantCarouselStateContext.Provider>
+  );
+}
+
+function resolveSlideOffer(restaurant, slide) {
+  if (!slide?.isRecommended) return null;
+
+  const originalPrice = Number(slide.price) || 0;
+  if (originalPrice <= 0) return null;
+
+  const buildResult = (discountValue, isFlat, offerText) => {
+    const value = Number(discountValue) || 0;
+    if (value <= 0) return null;
+
+    const discountedPrice = isFlat
+      ? Math.max(0, originalPrice - value)
+      : Math.max(0, originalPrice * (1 - value / 100));
+
+    if (discountedPrice >= originalPrice) return null;
+    return { offerText, originalPrice, discountedPrice };
+  };
+
+  const specificDiscount = Array.isArray(restaurant?.itemDiscounts)
+    ? restaurant.itemDiscounts.find((discount) => String(discount.itemId) === String(slide.id))
+    : null;
+  if (specificDiscount && Number(specificDiscount.discountValue) > 0) {
+    const value = Number(specificDiscount.discountValue);
+    const isFlat = String(specificDiscount.discountType || "").toUpperCase() === "FLAT";
+    return buildResult(value, isFlat, isFlat ? `FLAT ₹${value} OFF` : `${value}% OFF`);
+  }
+
+  if (Number(slide.discountPercent) > 0) {
+    const value = Number(slide.discountPercent);
+    return buildResult(value, false, `${value}% OFF`);
+  }
+
+  const matchingRule = (restaurant?.discountRules || []).find((rule) => {
+    const conditionValue = Number(rule.conditionValue);
+    return (
+      (rule.conditionType === "PRICE_ABOVE" && originalPrice > conditionValue) ||
+      (rule.conditionType === "PRICE_BELOW" && originalPrice < conditionValue)
+    );
+  });
+  if (matchingRule && Number(matchingRule.discountValue) > 0) {
+    const value = Number(matchingRule.discountValue);
+    return buildResult(value, false, `${value}% OFF`);
+  }
+
+  if (Number(restaurant?.discount) > 0) {
+    const value = Number(restaurant.discount);
+    return buildResult(value, false, `${value}% OFF`);
+  }
+  return null;
+}
+
+export function resolveItemOffer(restaurant, item) {
+  return resolveSlideOffer(restaurant, { ...item, isRecommended: true });
+}
+
+function OfferBannerContent({ item }) {
+  if (!item) return null;
+  return (
+    <div className="flex items-center w-full gap-2 px-3 py-1.5">
+      <span className="text-[12px] font-black text-black uppercase whitespace-nowrap">
+        {item.offerText}
+      </span>
+      <div className="w-[3px] h-[3px] rounded-full bg-black/60 shrink-0" />
+      <span className="font-bold text-black text-[11px] whitespace-nowrap truncate flex-1">
+        {item.name}
+      </span>
+      <div className="flex items-center gap-1.5 shrink-0 pl-1">
+        {Number.isFinite(item.discountedPrice) && item.discountedPrice < item.price ? (
+          <>
+            <span className="text-[10px] text-black/50 line-through">₹{Math.round(item.price)}</span>
+            <span className="font-semibold text-black text-[11px]">₹{Math.round(item.discountedPrice)}</span>
+          </>
+        ) : (
+          <span className="font-semibold text-black text-[11px]">₹{Math.round(item.price)}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function getBannerItems(restaurant) {
+  const items = [];
+
+  if (Array.isArray(restaurant?.itemDiscounts) && restaurant.itemDiscounts.some((d) => d.name)) {
+    restaurant.itemDiscounts.forEach((d) => {
+      if (d.name) {
+        items.push({ id: d.itemId, name: d.name, price: d.price || 0 });
+      }
+    });
+  }
+
+  if (items.length === 0 && Array.isArray(restaurant?.menu?.sections)) {
+    restaurant.menu.sections.forEach((section) => {
+      if (Array.isArray(section.items)) items.push(...section.items);
+    });
+  }
+
+  if (items.length === 0) {
+    if (Array.isArray(restaurant?.popularItems) && restaurant.popularItems.length > 0) {
+      items.push(...restaurant.popularItems);
+    } else if (Array.isArray(restaurant?.menuItems) && restaurant.menuItems.length > 0) {
+      items.push(...restaurant.menuItems);
+    }
+  }
+
+  if (items.length === 0 && restaurant?.featuredDish) {
+    items.push({
+      name: restaurant.featuredDish,
+      price: restaurant.featuredPrice || 0,
+      originalPrice: restaurant.featuredPrice || 0,
+    });
+  }
+
+  const globalOffers = Array.isArray(restaurant?.offers) ? restaurant.offers : [];
+  const bestGlobalOffer = globalOffers.reduce(
+    (best, offer) =>
+      !best || Number(offer.discountValue) > Number(best.discountValue) ? offer : best,
+    null,
+  );
+
+  return items
+    .map((item) => {
+      let priceNum = Number(item.price || item.originalPrice || 0);
+      if (typeof item.price === "string") {
+        const parsed = parseFloat(item.price.replace(/[^0-9.]/g, ""));
+        if (!isNaN(parsed)) priceNum = parsed;
+      }
+
+      let discountedPrice = null;
+      let dText = "SPECIAL OFFER";
+      const specificDiscount = Array.isArray(restaurant?.itemDiscounts)
+        ? restaurant.itemDiscounts.find(
+            (discount) =>
+              String(discount.itemId) === String(item.id || item._id || item.menuItemId),
+          )
+        : null;
+
+      if (specificDiscount) {
+        const discountValue = Number(specificDiscount.discountValue) || 0;
+        const isFlat = String(specificDiscount.discountType || "").toUpperCase() === "FLAT";
+        discountedPrice = isFlat
+          ? Math.max(0, priceNum - discountValue)
+          : priceNum * (1 - discountValue / 100);
+        dText = isFlat ? `FLAT â‚¹${discountValue} OFF` : `${discountValue}% OFF`;
+      } else if (bestGlobalOffer) {
+        const discountValue = Number(bestGlobalOffer.discountValue) || 0;
+        const isFlat = String(bestGlobalOffer.discountType || "").toUpperCase() === "FLAT";
+        if (isFlat) {
+          discountedPrice = Math.max(0, priceNum - discountValue);
+        } else {
+          const maxDiscount = Number(bestGlobalOffer.maxDiscount) || Infinity;
+          discountedPrice = priceNum - Math.min(priceNum * (discountValue / 100), maxDiscount);
+        }
+        dText = bestGlobalOffer.title ||
+          (isFlat ? `FLAT â‚¹${discountValue} OFF` : `${discountValue}% OFF`);
+      } else if (restaurant?.discount > 0) {
+        discountedPrice = priceNum * (1 - restaurant.discount / 100);
+        dText = `${restaurant.discount}% OFF`;
+      } else {
+        const matchingRule = (restaurant?.discountRules || []).find((rule) => {
+          const value = Number(rule.conditionValue);
+          return (
+            (rule.conditionType === "PRICE_ABOVE" && priceNum > value) ||
+            (rule.conditionType === "PRICE_BELOW" && priceNum < value)
+          );
+        });
+        if (matchingRule) {
+          const discountValue = matchingRule.discountValue || 0;
+          discountedPrice = priceNum * (1 - discountValue / 100);
+          dText = `${discountValue}% OFF`;
+        }
+      }
+
+      return { name: item.name, price: priceNum, discountedPrice, dText };
+    })
+    .filter((item) => item.discountedPrice !== null && item.discountedPrice < item.price)
+    .slice(0, 5);
+}
+
+export function RestaurantOfferBanner({ restaurant }) {
+  const carouselState = useContext(RestaurantCarouselStateContext);
+  const activeSlide = carouselState?.activeSlide || null;
+  const offerDetails = useMemo(
+    () => resolveSlideOffer(restaurant, activeSlide),
+    [restaurant, activeSlide],
+  );
+
+  if (!activeSlide || !offerDetails) return null;
+
+  const offerItem = {
+    ...activeSlide,
+    price: offerDetails.originalPrice,
+    discountedPrice: offerDetails.discountedPrice,
+    offerText: offerDetails.offerText,
+  };
+
+  return (
+    <div className="mb-2 w-full overflow-hidden lg:mb-3">
+      <div className="relative h-[30px] w-full overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${activeSlide.id || activeSlide.name}-${offerDetails.offerText}`}
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -12, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0 flex w-full items-center"
+          >
+            <OfferBannerContent item={offerItem} />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+const RestaurantImageCarousel = React.memo(
+  ({
+    restaurant,
+    priority = false,
+    autoPlay = false,
+    backendOrigin = "",
+    className = "h-52 sm:h-60 md:h-64 lg:h-72 xl:h-80",
+    roundedClass = "rounded-t-md",
+    onSlideClick = null,
+  }) => {
+    const webviewSessionKeyRef = useRef(WEBVIEW_SESSION_CACHE_BUSTER);
+    const imageElementRef = useRef(null);
+    const carouselState = useContext(RestaurantCarouselStateContext);
+    const setSyncedActiveSlide = carouselState?.setActiveSlide;
+
+    const withCacheBuster = useCallback(
+      (url) => {
+        if (typeof url !== "string" || !url) return "";
+        if (/^data:/i.test(url) || /^blob:/i.test(url)) return url;
+
+        // Resolve relative URLs (e.g. /uploads/...) so they load on mobile when backend is different from frontend.
+        const isRelative = !/^(https?:|\/\/|data:|blob:)/i.test(url.trim());
+        const resolvedUrl =
+          backendOrigin && isRelative
+            ? `${backendOrigin.replace(/\/$/, "")}${url.startsWith("/") ? url : `/${url}`}`
+            : url;
+
+        // Do not mutate signed URLs (legacy S3/Cloudfront/Firebase links can break if query changes).
+        const hasSignedParams =
+          /[?&](X-Amz-|Signature=|Expires=|AWSAccessKeyId=|GoogleAccessId=|token=|sig=|se=|sp=|sv=)/i.test(
+            resolvedUrl,
+          );
+        if (hasSignedParams) return resolvedUrl;
+
+        try {
+          const parsed = new URL(resolvedUrl, window.location.origin);
+          return parsed.toString();
+        } catch {
+          return resolvedUrl;
+        }
+      },
+      [backendOrigin],
+    );
+
+    const slides = useMemo(() => {
+      const result = [];
+      const recItems = Array.isArray(restaurant?.recommendedItems) ? restaurant.recommendedItems : [];
+
+      // Add recommended food items
+      recItems.forEach((item) => {
+        const rawImg = item?.image || item?.imageUrl || item?.photoUrl;
+        if (typeof rawImg === "string" && rawImg.trim()) {
+          result.push({
+            url: withCacheBuster(rawImg.trim()),
+            id: item.id || item._id,
+            name: item.name || "Recommended Dish",
+            price: item.price || 0,
+            foodType: item.foodType,
+            discountPercent: item.discountPercent,
+            isRecommended: true,
+          });
+        }
+      });
+
+      // If recommended food images exist, show ONLY recommended dishes
+      if (result.length > 0) {
+        return result;
+      }
+
+      // Fallback: If no recommended items exist, use regular restaurant cover images
+      let sourceImages = [];
+      if (Array.isArray(restaurant?.images) && restaurant.images.length > 0) {
+        sourceImages = restaurant.images;
+      } else if (Array.isArray(restaurant?.coverImages) && restaurant.coverImages.length > 0) {
+        sourceImages = restaurant.coverImages;
+      } else if (restaurant?.image) {
+        sourceImages = [restaurant.image];
+      } else if (restaurant?.profileImage) {
+        const pUrl = typeof restaurant.profileImage === "string" ? restaurant.profileImage : (restaurant.profileImage?.url || "");
+        if (pUrl) sourceImages = [pUrl];
+      }
+
+      const validImages = sourceImages
+        .map((img) => (typeof img === "string" ? img : (img?.url || img?.secure_url || "")))
+        .filter((img) => typeof img === "string" && img.trim() && !img.includes("xv4gkshv"))
+        .map((img) => img.trim());
+
+      validImages.forEach((img) => {
+        const processedUrl = withCacheBuster(img);
+        if (!result.some((s) => s.url === processedUrl)) {
+          result.push({
+            url: processedUrl,
+            isRecommended: false,
+          });
+        }
+      });
+
+      if (result.length === 0) {
+        const seedStr = String(restaurant?.id || restaurant?.mongoId || restaurant?._id || restaurant?.name || "food");
+        let hash = 0;
+        for (let i = 0; i < seedStr.length; i++) {
+          hash = (hash << 5) - hash + seedStr.charCodeAt(i);
+          hash |= 0;
+        }
+        const fallbackIdx = Math.abs(hash) % foodImages.length;
+        result.push({
+          url: foodImages[fallbackIdx] || foodImages[0],
+          isRecommended: false,
+        });
+      }
+
+      return result;
+    }, [restaurant?.recommendedItems, restaurant?.images, restaurant?.coverImages, restaurant?.image, restaurant?.profileImage, withCacheBuster]);
+
+    const images = useMemo(() => slides.map((s) => s.url), [slides]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [slideDirection, setSlideDirection] = useState(1);
+    const [currentItemIndex, setCurrentItemIndex] = useState(0);
+
+    const bannerItems = useMemo(() => {
+      const items = [];
+
+      // If backend populated dish names inside itemDiscounts, use them directly!
+      if (Array.isArray(restaurant?.itemDiscounts) && restaurant.itemDiscounts.some((d) => d.name)) {
+        restaurant.itemDiscounts.forEach((d) => {
+          if (d.name) {
+            items.push({
+              id: d.itemId,
+              name: d.name,
+              price: d.price || 0,
+            });
+          }
+        });
+      }
+
+      if (items.length === 0 && restaurant?.menu?.sections && Array.isArray(restaurant.menu.sections)) {
+        restaurant.menu.sections.forEach((sec) => {
+          if (Array.isArray(sec.items)) items.push(...sec.items);
+        });
+      }
+
+      if (items.length === 0) {
+        if (Array.isArray(restaurant?.popularItems) && restaurant.popularItems.length > 0) {
+          items.push(...restaurant.popularItems);
+        } else if (Array.isArray(restaurant?.menuItems) && restaurant.menuItems.length > 0) {
+          items.push(...restaurant.menuItems);
+        }
+      }
+
+      if (items.length === 0 && restaurant?.featuredDish) {
+        items.push({
+          name: restaurant.featuredDish,
+          price: restaurant.featuredPrice || 0,
+          originalPrice: restaurant.featuredPrice || 0,
+        });
+      }
+
+      const globalOffers = Array.isArray(restaurant?.offers) ? restaurant.offers : [];
+      let bestGlobalOffer = null;
+      globalOffers.forEach((offer) => {
+        if (!bestGlobalOffer || Number(offer.discountValue) > Number(bestGlobalOffer.discountValue)) {
+          bestGlobalOffer = offer;
+        }
+      });
+
+      const discountedItems = items
+        .map((item) => {
+          let priceNum = Number(item.price || item.originalPrice || 0);
+
+          if (typeof item.price === "string") {
+            const parsed = parseFloat(item.price.replace(/[^0-9.]/g, ""));
+            if (!isNaN(parsed)) priceNum = parsed;
+          }
+
+          let discountedPrice = null;
+          let dText = "SPECIAL OFFER";
+
+          const specificDiscount = Array.isArray(restaurant?.itemDiscounts)
+            ? restaurant.itemDiscounts.find((d) => String(d.itemId) === String(item.id || item._id || item.menuItemId))
+            : null;
+
+          if (specificDiscount) {
+            const discountVal = Number(specificDiscount.discountValue) || 0;
+            const isFlat = String(specificDiscount.discountType || "").toUpperCase() === "FLAT";
+            if (!isFlat) {
+              discountedPrice = priceNum * (1 - discountVal / 100);
+              dText = `${discountVal}% OFF`;
+            } else {
+              discountedPrice = Math.max(0, priceNum - discountVal);
+              dText = `FLAT ₹${discountVal} OFF`;
+            }
+          } else if (!discountedPrice && bestGlobalOffer) {
+            const discountVal = Number(bestGlobalOffer.discountValue) || 0;
+            const isFlat = String(bestGlobalOffer.discountType || "").toUpperCase() === "FLAT";
+            if (!isFlat) {
+              const maxD = Number(bestGlobalOffer.maxDiscount) || Infinity;
+              const calcD = priceNum * (discountVal / 100);
+              const actualD = Math.min(calcD, maxD);
+              discountedPrice = priceNum - actualD;
+              dText = bestGlobalOffer.title || `${discountVal}% OFF`;
+            } else {
+              discountedPrice = Math.max(0, priceNum - discountVal);
+              dText = bestGlobalOffer.title || `FLAT ₹${discountVal} OFF`;
+            }
+          } else if (!discountedPrice && restaurant?.discount > 0) {
+            discountedPrice = priceNum * (1 - restaurant.discount / 100);
+            dText = `${restaurant.discount}% OFF`;
+          } else {
+            const matchingRule = (restaurant?.discountRules || []).find((rule) => {
+              const val = Number(rule.conditionValue);
+              if (rule.conditionType === "PRICE_ABOVE" && priceNum > val) return true;
+              if (rule.conditionType === "PRICE_BELOW" && priceNum < val) return true;
+              return false;
+            });
+            if (matchingRule) {
+              const discountVal = matchingRule.discountValue || 0;
+              discountedPrice = priceNum * (1 - discountVal / 100);
+              dText = `${discountVal}% OFF`;
+            }
+          }
+
+          return {
+            name: item.name,
+            price: priceNum,
+            discountedPrice: discountedPrice,
+            dText: dText,
+          };
+        })
+        .filter((item) => item.discountedPrice !== null && item.discountedPrice < item.price);
+
+      return discountedItems.slice(0, 5);
+    }, [restaurant]);
+
+    useEffect(() => {
+      if (!priority || bannerItems.length <= 1) return;
+      const interval = setInterval(() => {
+        setCurrentItemIndex((prev) => (prev + 1) % bannerItems.length);
+      }, 2000);
+      return () => clearInterval(interval);
+    }, [priority, bannerItems.length]);
+
+    // Auto-slide independently from loading priority. This allows all Home
+    // restaurant cards to rotate without eager-loading every card image.
+    useEffect(() => {
+      if (!autoPlay || images.length <= 1) return;
+      const interval = setInterval(() => {
+        setSlideDirection(1);
+        setCurrentIndex((prev) => (prev + 1) % images.length);
+      }, 7000);
+      return () => clearInterval(interval);
+    }, [autoPlay, images.length]);
+
+    const [loadedBySrc, setLoadedBySrc] = useState({});
+    const [, setAttemptedSrcs] = useState({});
+    const [isImageUnavailable, setIsImageUnavailable] = useState(false);
+    const [showShimmer, setShowShimmer] = useState(true);
+    const [lastGoodSrc, setLastGoodSrc] = useState("");
+    const touchStartX = useRef(0);
+    const touchEndX = useRef(0);
+    const isSwiping = useRef(false);
+
+    const safeIndex =
+      images.length > 0
+        ? ((currentIndex % images.length) + images.length) % images.length
+        : 0;
+    const currentSlide = slides[safeIndex] || null;
+    const primarySrc = images[safeIndex] || "";
+    const displaySrc = primarySrc;
+    const renderSrc = displaySrc || lastGoodSrc;
+
+    useEffect(() => {
+      setSyncedActiveSlide?.(currentSlide);
+    }, [setSyncedActiveSlide, currentSlide]);
+
+    // Reset transient image state when restaurant or source list changes.
+    useEffect(() => {
+      setCurrentIndex(0);
+      setLoadedBySrc({});
+      setAttemptedSrcs({});
+      setIsImageUnavailable(images.length === 0);
+      setShowShimmer(images.length > 0);
+    }, [restaurant?.id, restaurant?.slug, restaurant?.updatedAt, images]);
+
+    // Clear sticky successful source only when card identity changes.
+    useEffect(() => {
+      setLastGoodSrc("");
+    }, [restaurant?.id, restaurant?.slug]);
+
+    // WebView can serve from cache without firing onLoad; handle already-complete images.
+    useEffect(() => {
+      if (!renderSrc) return;
+      const imgEl = imageElementRef.current;
+      if (!imgEl) return;
+
+      setShowShimmer(true);
+      const shimmerTimeout = setTimeout(() => {
+        setShowShimmer(false);
+      }, 2500);
+
+      if (imgEl.complete) {
+        if (imgEl.naturalWidth > 0) {
+          setLoadedBySrc((prev) =>
+            prev[renderSrc] ? prev : { ...prev, [renderSrc]: true },
+          );
+          setLastGoodSrc(renderSrc);
+          setShowShimmer(false);
+        } else {
+          setAttemptedSrcs((prev) => ({ ...prev, [renderSrc]: true }));
+        }
+      }
+      return () => clearTimeout(shimmerTimeout);
+    }, [renderSrc]);
+
+    // Handle touch events for swipe
+    const handleTouchStart = (e) => {
+      touchStartX.current = e.touches[0].clientX;
+      isSwiping.current = false;
+    };
+
+    const handleTouchMove = (e) => {
+      const currentX = e.touches[0].clientX;
+      const diff = touchStartX.current - currentX;
+
+      if (Math.abs(diff) > 10) {
+        isSwiping.current = true;
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (!isSwiping.current) return;
+
+      touchEndX.current = e.changedTouches[0].clientX;
+      const diff = touchStartX.current - touchEndX.current;
+      const minSwipeDistance = 85;
+
+      if (Math.abs(diff) > minSwipeDistance) {
+        if (diff > 0) {
+          // Swipe left - next image
+          setSlideDirection(1);
+          setCurrentIndex((prev) => (prev + 1) % images.length);
+        } else {
+          // Swipe right - previous image
+          setSlideDirection(-1);
+          setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+        }
+      }
+
+      isSwiping.current = false;
+      touchStartX.current = 0;
+      touchEndX.current = 0;
+    };
+
+    const handleCarouselClick = (e) => {
+      if (onSlideClick && currentSlide) {
+        onSlideClick(currentSlide, e);
+      }
+    };
+
+    const showMultipleImages = images.length > 1;
+
+    return (
+      <div
+        className={`relative ${className} w-full overflow-hidden ${roundedClass} flex-shrink-0 group`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={handleCarouselClick}
+      >
+        {showShimmer && !isImageUnavailable && Boolean(renderSrc) && (
+          <div className="absolute inset-0 z-[1] overflow-hidden bg-gray-200">
+            <div className="h-full w-full animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200" />
+          </div>
+        )}
+
+        <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110">
+          <AnimatePresence initial={false} custom={slideDirection}>
+            {renderSrc && (
+              <motion.div
+                key={`${safeIndex}-${primarySrc}`}
+                custom={slideDirection}
+                variants={{
+                  enter: (direction) => ({ x: direction > 0 ? "100%" : "-100%" }),
+                  center: { x: 0 },
+                  exit: (direction) => ({ x: direction > 0 ? "-100%" : "100%" }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0 will-change-transform"
+              >
+                <img
+                  ref={imageElementRef}
+                  src={renderSrc}
+                  alt={`${restaurant?.name || "Restaurant"} - Image ${safeIndex + 1}`}
+                  className="w-full h-full object-cover"
+                  loading={priority ? "eager" : "lazy"}
+                  fetchPriority={priority ? "high" : "low"}
+                  decoding="async"
+                  onLoad={() => {
+                    setLoadedBySrc((prev) => ({ ...prev, [renderSrc]: true }));
+                    setLastGoodSrc(renderSrc);
+                    setShowShimmer(false);
+                  }}
+                  onError={() => {
+                    setAttemptedSrcs((prev) => {
+                      const next = { ...prev, [primarySrc]: true };
+                      const attemptedCount = Object.keys(next).length;
+
+                      if (attemptedCount >= images.length) {
+                        setIsImageUnavailable(true);
+                      } else if (images.length > 1) {
+                        setSlideDirection(1);
+                        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+                      }
+
+                      return next;
+                    });
+                    if (images.length === 1) {
+                      setIsImageUnavailable(true);
+                    }
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Secretly preload the next image to prevent white flash on swipe */}
+          {images.length > 1 && (
+            <img
+              src={images[(currentIndex + 1) % images.length]}
+              className="hidden"
+              alt="preload next"
+              aria-hidden="true"
+              decoding="async"
+            />
+          )}
+        </div>
+
+        {/* Veg / non-veg marker for the currently visible dish */}
+        {currentSlide?.isRecommended && currentSlide?.foodType && (
+          <div
+            className={`absolute left-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-md border-2 bg-white/95 shadow-lg pointer-events-none ${
+              currentSlide.foodType === "Veg" ? "border-green-600" : "border-red-600"
+            }`}
+            title={currentSlide.foodType === "Veg" ? "Vegetarian" : "Non-vegetarian"}
+          >
+            <div className={`h-3 w-3 rounded-full ${currentSlide.foodType === "Veg" ? "bg-green-600" : "bg-red-600"}`} />
+          </div>
+        )}
+
+        {/* Recommended Dish Floating Tag */}
+        {currentSlide?.isRecommended && currentSlide?.name && (
+          <div className={`absolute top-3 z-10 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-white text-[11px] font-bold shadow-lg border border-amber-400/40 pointer-events-none ${currentSlide.foodType ? "left-12" : "left-3"}`}>
+            <Sparkles className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+            <span className="truncate max-w-[140px] sm:max-w-[190px]">{currentSlide.name}</span>
+            {currentSlide.price > 0 && (
+              <span className="text-amber-300 font-extrabold ml-0.5">₹{Math.round(currentSlide.price)}</span>
+            )}
+          </div>
+        )}
+
+        {isImageUnavailable && (
+          <div className="absolute inset-0 z-[2] flex items-center justify-center bg-gray-100">
+            <span className="text-xs text-gray-500">Image unavailable</span>
+          </div>
+        )}
+
+        {/* Image Indicators - only show if more than 1 image */}
+        {showMultipleImages && (
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex items-center z-10 -space-x-2">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSlideDirection(index > safeIndex ? 1 : -1);
+                  setCurrentIndex(index);
+                }}
+                className="w-10 h-10 flex items-center justify-center focus:outline-none group/btn rounded-full"
+                aria-label={`Go to image ${index + 1}`}
+              >
+                <div
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    index === currentIndex
+                      ? "w-6 bg-white"
+                      : "w-1.5 bg-white/50 group-hover/btn:bg-white/75"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Gradient Overlay on Hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+        {/* Shine Effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full transition-transform duration-1000 group-hover:animate-shine" />
+
+      </div>
+    );
+  },
+);
+
+RestaurantImageCarousel.displayName = "RestaurantImageCarousel";
+
+export default RestaurantImageCarousel;

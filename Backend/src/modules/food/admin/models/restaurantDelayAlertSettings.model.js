@@ -1,0 +1,38 @@
+import mongoose from 'mongoose';
+
+const alertDeviceSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true, maxlength: 50 },
+  token: { type: String, required: true, trim: true },
+  platform: { type: String, enum: ['web', 'mobile'], default: 'web' },
+  devicePlatform: { type: String, enum: ['ios', 'android', 'web', 'unknown'], default: 'unknown' },
+  deviceId: { type: String, trim: true, default: '' },
+  adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'FoodAdmin', required: true },
+  selected: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: true },
+  lastSeenAt: { type: Date, default: Date.now },
+}, { _id: true });
+
+const obdCallAlertSchema = new mongoose.Schema({
+  enabled: { type: Boolean, default: true },
+  delayMinutes: { type: Number, min: 1, max: 30, default: 3 },
+  escalationDelaySeconds: { type: Number, min: 30, max: 600, default: 90 },
+  voiceFile: { type: String, default: 'Ravi.wav', trim: true },
+  autoCancelEnabled: { type: Boolean, default: true },
+  autoCancelDelaySeconds: { type: Number, min: 30, max: 600, default: 90 },
+}, { _id: false });
+
+const restaurantDelayAlertSettingsSchema = new mongoose.Schema({
+  key: { type: String, unique: true, default: 'global', immutable: true },
+  enabled: { type: Boolean, default: false },
+  delayMinutes: { type: Number, min: 1, max: 60, default: 5 },
+  devices: { type: [alertDeviceSchema], default: [] },
+  obdCallAlert: {
+    type: obdCallAlertSchema,
+    default: () => ({ enabled: true, delayMinutes: 3, escalationDelaySeconds: 90, voiceFile: 'Ravi.wav', autoCancelEnabled: true, autoCancelDelaySeconds: 90 }),
+  },
+}, { collection: 'food_restaurant_delay_alert_settings', timestamps: true });
+
+export const FoodRestaurantDelayAlertSettings = mongoose.model(
+  'FoodRestaurantDelayAlertSettings',
+  restaurantDelayAlertSettingsSchema,
+);
