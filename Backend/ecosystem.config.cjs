@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'indian-foods-api',
+      name: 'grhapoch-api',
       script: './server.js',
       instances: 'max',
       exec_mode: 'cluster',
@@ -15,7 +15,7 @@ module.exports = {
       },
     },
     {
-      name: 'indian-foods-socket',
+      name: 'grhapoch-socket',
       script: './socket-server.js',
       instances: 1,
       exec_mode: 'fork',
@@ -29,7 +29,7 @@ module.exports = {
       },
     },
     {
-      name: 'indian-foods-scheduler',
+      name: 'grhapoch-scheduler',
       script: './scheduler-server.js',
       instances: 1,
       exec_mode: 'fork',
@@ -43,7 +43,7 @@ module.exports = {
       },
     },
     {
-      name: 'indian-foods-worker-otp',
+      name: 'grhapoch-worker-otp',
       script: './src/queues/workers/otp.worker.js',
       instances: 1,
       exec_mode: 'fork',
@@ -54,7 +54,7 @@ module.exports = {
       env: { NODE_ENV: 'production' },
     },
     {
-      name: 'indian-foods-worker-notification',
+      name: 'grhapoch-worker-notification',
       script: './src/queues/workers/notification.worker.js',
       instances: 1,
       exec_mode: 'fork',
@@ -65,7 +65,7 @@ module.exports = {
       env: { NODE_ENV: 'production' },
     },
     {
-      name: 'indian-foods-worker-order',
+      name: 'grhapoch-worker-order',
       script: './src/queues/workers/order.worker.js',
       instances: 1,
       exec_mode: 'fork',
@@ -76,7 +76,7 @@ module.exports = {
       env: { NODE_ENV: 'production' },
     },
     {
-      name: 'indian-foods-worker-tracking',
+      name: 'grhapoch-worker-tracking',
       script: './src/queues/workers/tracking.worker.js',
       instances: 1,
       exec_mode: 'fork',
