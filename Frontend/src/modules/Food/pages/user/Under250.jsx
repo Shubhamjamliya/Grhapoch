@@ -1398,7 +1398,7 @@ export default function Under250() {
           </div>
         )}
         {bannerImages.length === 0 && !loadingBanner && (
-          <div className="w-full h-full relative z-0 bg-gradient-to-br from-[#fcf4f9] to-[#f5e8f1] dark:from-[#3c0f3d] dark:to-secondary overflow-hidden rounded-b-[2rem] md:rounded-b-none" />
+          <div className="w-full h-full relative z-0 bg-gradient-to-br from-[#fef4f4] to-[#faeaea] dark:from-[#3d0f0f] dark:to-secondary overflow-hidden rounded-b-[2rem] md:rounded-b-none" />
         )}
       </div>
 
@@ -1651,7 +1651,7 @@ export default function Under250() {
                 <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Sort By</h2>
                 <button
                   onClick={handleClearAll}
-                  className="text-primary dark:text-[#b18da5] font-medium text-sm md:text-base"
+                  className="text-primary dark:text-[#c99a9a] font-medium text-sm md:text-base"
                 >
                   Clear all
                 </button>
@@ -1665,11 +1665,11 @@ export default function Under250() {
                       key={option.id || 'relevance'}
                       onClick={() => setDraftSelectedSort(option.id)}
                       className={`px-4 md:px-5 lg:px-6 py-3 md:py-4 rounded-xl border text-left transition-colors ${draftSelectedSort === option.id
-                        ? 'border-primary bg-[#fdfafc] dark:bg-primary/20'
+                        ? 'border-primary bg-[#fffafa] dark:bg-primary/20'
                         : 'border-gray-200 dark:border-gray-800 hover:border-primary'
                         }`}
                     >
-                      <span className={`text-sm md:text-base lg:text-lg font-medium ${draftSelectedSort === option.id ? 'text-primary dark:text-[#b18da5]' : 'text-gray-700 dark:text-gray-300'}`}>
+                      <span className={`text-sm md:text-base lg:text-lg font-medium ${draftSelectedSort === option.id ? 'text-primary dark:text-[#c99a9a]' : 'text-gray-700 dark:text-gray-300'}`}>
                         {option.label}
                       </span>
                     </button>

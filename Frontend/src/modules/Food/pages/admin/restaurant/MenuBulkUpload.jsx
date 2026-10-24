@@ -231,7 +231,7 @@ const MenuBulkUpload = () => {
                   <span className="text-gray-500">{doneCount} / {doneCount + pendingCount + failedCount} done ({progress}%)</span>
                 </div>
                 <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
+                  <div className="h-full bg-gradient-to-r from-blue-500 to-red-500 rounded-full transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
                 </div>
                 <div className="flex gap-4 text-xs font-semibold">
                   <span className="flex items-center gap-1 text-green-600"><CheckCircle2 className="w-3.5 h-3.5" /> {doneCount} Done</span>

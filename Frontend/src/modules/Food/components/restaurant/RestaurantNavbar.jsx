@@ -475,7 +475,7 @@ export default function RestaurantNavbar({
         <div className="fixed top-20 left-4 right-4 z-[100] animate-in slide-in-from-top duration-300">
           <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-primary/10 overflow-hidden">
             <div className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
                 <Utensils className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
@@ -497,7 +497,7 @@ export default function RestaurantNavbar({
                   clearNewReservation();
                   navigate("/food/restaurant/explore");
                 }}
-                className="flex-1 h-10 bg-primary text-white text-xs font-bold rounded-xl uppercase tracking-widest shadow-lg shadow-purple-200"
+                className="flex-1 h-10 bg-primary text-white text-xs font-bold rounded-xl uppercase tracking-widest shadow-lg shadow-red-200"
               >
                 View Request
               </button>

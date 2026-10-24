@@ -968,7 +968,7 @@ export default function AddressSelectorPage() {
             onClick={handleUseCurrentLocation}
             className="w-full flex items-center gap-4 p-4 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-sm hover:shadow-md transition-all group"
           >
-            <div className="h-10 w-10 rounded-full bg-[#7e386610] dark:bg-[#7e386620] flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-[#e52e2e10] dark:bg-[#e52e2e20] flex items-center justify-center">
               <Navigation className="h-5 w-5 text-primary" />
             </div>
             <div className="text-left flex-1">
@@ -1000,7 +1000,7 @@ export default function AddressSelectorPage() {
                   <div
                     key={getAddressId(addr) || idx}
                     onClick={() => handleSelectSavedAddress(addr)}
-                    className="w-full flex items-start gap-4 p-4 bg-slate-50 dark:bg-[#1a1a1a] rounded-xl hover:bg-[#7e386610] dark:hover:bg-[#7e386620] transition-colors text-left group cursor-pointer"
+                    className="w-full flex items-start gap-4 p-4 bg-slate-50 dark:bg-[#1a1a1a] rounded-xl hover:bg-[#e52e2e10] dark:hover:bg-[#e52e2e20] transition-colors text-left group cursor-pointer"
                   >
                     <div className="h-10 w-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
                       <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />

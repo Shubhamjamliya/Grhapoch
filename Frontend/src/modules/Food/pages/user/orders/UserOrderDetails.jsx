@@ -687,7 +687,7 @@ export default function UserOrderDetails() {
                   FREE
                 </span>
               )}
-              <span className="text-primary dark:text-[#a04882] font-medium uppercase">
+              <span className="text-primary dark:text-[#de5252] font-medium uppercase">
                 {pricing.deliveryFee ? `₹${Number(pricing.deliveryFee).toFixed(2)}` : "Free"}
               </span>
             </div>

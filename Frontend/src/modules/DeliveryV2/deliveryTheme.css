@@ -113,7 +113,7 @@
 .delivery-v2-theme .hover\:bg-cyan-600:hover,
 .delivery-v2-theme .hover\:bg-indigo-600:hover,
 .delivery-v2-theme [class~="hover:bg-[#00A055]"]:hover,
-.delivery-v2-theme [class~="hover:bg-[#6a2f56]"]:hover {
+.delivery-v2-theme [class~="hover:bg-[#c92424]"]:hover {
   background-color: var(--dv-primary-strong) !important;
 }
 
@@ -201,7 +201,7 @@
 .delivery-v2-theme input,
 .delivery-v2-theme textarea,
 .delivery-v2-theme select {
-  border-color: #e8dee7 !important;
+  border-color: #ebdede !important;
   background-color: #fff !important;
   color: var(--dv-text) !important;
 }

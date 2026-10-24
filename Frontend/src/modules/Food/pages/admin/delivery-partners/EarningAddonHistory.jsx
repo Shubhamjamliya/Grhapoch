@@ -539,8 +539,8 @@ export default function EarningAddonHistory() {
 
                 {/* Offer Info */}
                 <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Package className="w-5 h-5 text-purple-600" />
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <Package className="w-5 h-5 text-red-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Offer</p>

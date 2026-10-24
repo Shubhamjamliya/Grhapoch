@@ -55,7 +55,7 @@ function KpiCard({ title, value, subtitle, icon: Icon, trend, accent = "primary"
     green: "from-emerald-50 to-emerald-100/50 text-emerald-700",
     amber: "from-amber-50 to-amber-100/50 text-amber-700",
     blue: "from-blue-50 to-blue-100/50 text-blue-700",
-    violet: "from-violet-50 to-violet-100/50 text-violet-700",
+    violet: "from-red-50 to-red-100/50 text-red-700",
   }
 
   return (

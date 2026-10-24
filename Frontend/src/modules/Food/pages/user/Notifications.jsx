@@ -92,7 +92,7 @@ export default function Notifications() {
         timestamp: Date.now(),
         read: false,
         icon: "AlertCircle",
-        iconColor: "text-#55254b"
+        iconColor: "text-#a31b1b"
       }
       setNotificationsList(prev => [newNotification, ...prev])
     }

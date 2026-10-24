@@ -115,7 +115,7 @@ export default function RestaurantSubscription() {
 
       {loading ? (
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#FA0272]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#e91a13]" />
         </div>
       ) : (
         <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
@@ -190,7 +190,7 @@ export default function RestaurantSubscription() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     className={`bg-white rounded-[24px] p-5 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border transition-all relative overflow-hidden ${
-                      isCurrent ? "border-[#FA0272] bg-[#FA0272]/[0.01]" : "border-slate-200"
+                      isCurrent ? "border-[#e91a13] bg-[#e91a13]/[0.01]" : "border-slate-200"
                     }`}
                   >
                     <div className="flex justify-between items-start">
@@ -198,7 +198,7 @@ export default function RestaurantSubscription() {
                         <h4 className="font-extrabold text-[18px] text-slate-900 leading-tight flex items-center gap-2">
                           {plan.name}
                           {isCurrent && (
-                            <span className="bg-[#FA0272]/10 text-[#FA0272] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                            <span className="bg-[#e91a13]/10 text-[#e91a13] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
                               Current
                             </span>
                           )}
@@ -236,7 +236,7 @@ export default function RestaurantSubscription() {
                             ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                             : !!currentSub
                             ? "bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
-                            : "bg-[#FA0272] text-white hover:bg-[#FA0272]/90 shadow-md shadow-[#FA0272]/10"
+                            : "bg-[#e91a13] text-white hover:bg-[#e91a13]/90 shadow-md shadow-[#e91a13]/10"
                         }`}
                       >
                         {processingId === plan._id && <Loader2 className="w-4 h-4 animate-spin" />}

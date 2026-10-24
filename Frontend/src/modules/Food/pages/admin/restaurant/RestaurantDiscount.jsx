@@ -263,7 +263,7 @@ export default function RestaurantDiscount() {
                         <td className="px-4 py-4 text-center">
                           <div className="flex flex-col gap-1 items-center">
                             {hasGlobal && <span className="inline-flex items-center gap-1 text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-200"><Percent className="w-3 h-3"/> Global {restaurant.discount}%</span>}
-                            {hasItems && <span className="inline-flex items-center gap-1 text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full border border-purple-200"><Tag className="w-3 h-3"/> {restaurant.itemDiscounts.length} Items</span>}
+                            {hasItems && <span className="inline-flex items-center gap-1 text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full border border-red-200"><Tag className="w-3 h-3"/> {restaurant.itemDiscounts.length} Items</span>}
                             {hasRules && <span className="inline-flex items-center gap-1 text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200"><Settings2 className="w-3 h-3"/> {restaurant.discountRules.length} Rules</span>}
                             {!hasGlobal && !hasItems && !hasRules && <span className="text-xs text-slate-400">None</span>}
                           </div>

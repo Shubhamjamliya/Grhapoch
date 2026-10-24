@@ -202,8 +202,8 @@ export default function DeliveryBoyWallet() {
             { 
               label: "Bonus", 
               value: summary?.totalBonus ?? wallets.reduce((acc, w) => acc + Number(w.bonus ?? w.total_bonus ?? 0), 0), 
-              color: "text-violet-600", 
-              bg: "bg-violet-50" 
+              color: "text-red-600", 
+              bg: "bg-red-50" 
             },
             { 
               label: "Total Withdrawn", 
@@ -321,7 +321,7 @@ export default function DeliveryBoyWallet() {
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-700">{formatCurrency(pocket)}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-700">{formatCurrency(collected)}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-slate-800">{formatCurrency(earning)}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-violet-600">{formatCurrency(bonus)}</td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-red-600">{formatCurrency(bonus)}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-orange-600">{formatCurrency(withdrawn)}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-700">
                             {formatCurrency(cashInHand)}

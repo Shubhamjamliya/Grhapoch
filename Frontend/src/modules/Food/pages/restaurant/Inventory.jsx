@@ -719,7 +719,7 @@ function SimpleCalendar({ selectedDate, onDateSelect, isOpen, onClose }) {
                         : isSelectedDate
                           ? 'bg-primary text-white'
                           : isTodayDate
-                            ? 'bg-[#f9f0f7] text-primary font-semibold'
+                            ? 'bg-[#fdf0f0] text-primary font-semibold'
                             : 'text-gray-700 hover:bg-gray-100'
                       }`}
                   >
@@ -2042,8 +2042,8 @@ export default function Inventory() {
             onClick={() => setActiveTab("all-items")}
             className={`relative overflow-hidden rounded-[24px] border px-4 py-3 text-sm font-semibold ${
               activeTab === "all-items"
-                ? "border-primary text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.6)]"
-                : "border-[#ead6e3] bg-white/90 text-[#6d6470] shadow-[0_16px_40px_-34px_rgba(109,100,112,0.35)]"
+                ? "border-primary text-white shadow-[0_18px_32px_-24px_rgba(229, 46, 46,0.6)]"
+                : "border-[#f4d9d9] bg-white/90 text-[#6d6470] shadow-[0_16px_40px_-34px_rgba(109,100,112,0.35)]"
             }`}
             animate={{
               scale: activeTab === "all-items" ? 1.02 : 1,
@@ -2065,7 +2065,7 @@ export default function Inventory() {
             <span className="relative z-10 flex min-h-7 items-center justify-center gap-2 leading-none">
               <span className="whitespace-nowrap">All items</span>
               <span className={`inline-flex min-h-5 min-w-[24px] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                activeTab === "all-items" ? "bg-white text-primary" : "bg-[#f6ecf3] text-[#6d6470]"
+                activeTab === "all-items" ? "bg-white text-primary" : "bg-[#fbeded] text-[#6d6470]"
               }`}>
                 {totalItems}
               </span>
@@ -2076,8 +2076,8 @@ export default function Inventory() {
             onClick={() => setActiveTab("add-ons")}
             className={`relative overflow-hidden rounded-[24px] border px-4 py-3 text-sm font-semibold ${
               activeTab === "add-ons"
-                ? "border-primary text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.6)]"
-                : "border-[#ead6e3] bg-white/90 text-[#6d6470] shadow-[0_16px_40px_-34px_rgba(109,100,112,0.35)]"
+                ? "border-primary text-white shadow-[0_18px_32px_-24px_rgba(229, 46, 46,0.6)]"
+                : "border-[#f4d9d9] bg-white/90 text-[#6d6470] shadow-[0_16px_40px_-34px_rgba(109,100,112,0.35)]"
             }`}
             animate={{
               scale: activeTab === "add-ons" ? 1.02 : 1,
@@ -2099,7 +2099,7 @@ export default function Inventory() {
             <span className="relative z-10 flex min-h-7 items-center justify-center gap-2 leading-none">
               <span className="whitespace-nowrap">Add ons</span>
               <span className={`inline-flex min-h-5 min-w-[24px] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                activeTab === "add-ons" ? "bg-white text-primary" : "bg-[#f6ecf3] text-[#6d6470]"
+                activeTab === "add-ons" ? "bg-white text-primary" : "bg-[#fbeded] text-[#6d6470]"
               }`}>
                 {addons.length}
               </span>
@@ -2194,7 +2194,7 @@ export default function Inventory() {
                     setSearchQuery("")
                     setSelectedFilter("all")
                   }}
-                  className="rounded-full border border-[#e7d5e0] px-3 py-1.5 text-xs font-semibold text-[#6b4d62] transition-colors hover:border-[#d5bdd0] hover:bg-[#f9f0f7]"
+                  className="rounded-full border border-[#f3d6d6] px-3 py-1.5 text-xs font-semibold text-[#6b4d4d] transition-colors hover:border-[#ecc7c7] hover:bg-[#fdf0f0]"
                 >
                   Clear all
                 </button>
@@ -2209,7 +2209,7 @@ export default function Inventory() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={activeTab === "add-ons" ? "Search add-ons by name or status" : "Search categories or menu items"}
-                  className="h-12 w-full rounded-[20px] border border-[#e7d5e0] bg-[#fcf7fb] pl-11 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#c796b8] focus:bg-white focus:outline-none"
+                  className="h-12 w-full rounded-[20px] border border-[#f3d6d6] bg-[#fef7f7] pl-11 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#eaa3a3] focus:bg-white focus:outline-none"
                 />
                 {searchQuery ? (
                   <button
@@ -2226,7 +2226,7 @@ export default function Inventory() {
               <div className="flex gap-2 flex-wrap items-center">
                 <button
                   onClick={() => setFilterOpen(true)}
-                  className="relative flex h-12 items-center justify-center gap-2 rounded-[20px] border border-[#e7d5e0] bg-white px-4 text-sm font-semibold text-secondary transition-colors hover:border-[#d5bdd0] hover:bg-[#f9f0f7]"
+                  className="relative flex h-12 items-center justify-center gap-2 rounded-[20px] border border-[#f3d6d6] bg-white px-4 text-sm font-semibold text-secondary transition-colors hover:border-[#ecc7c7] hover:bg-[#fdf0f0]"
                 >
                 <SlidersHorizontal className="w-4 h-4 text-primary" />
                 <span>Filters</span>
@@ -2238,7 +2238,7 @@ export default function Inventory() {
               {activeTab !== "add-ons" && (
                 <button
                   onClick={() => setIsAddPopupOpen(true)}
-                  className="h-12 rounded-[20px] bg-primary px-4 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.7)] transition-colors hover:bg-secondary"
+                  className="h-12 rounded-[20px] bg-primary px-4 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(229, 46, 46,0.7)] transition-colors hover:bg-secondary"
                 >
                   + Add item
                 </button>
@@ -2247,7 +2247,7 @@ export default function Inventory() {
               {activeTab === "add-ons" && (
                 <button
                   onClick={() => setIsAddAddonOpen((v) => !v)}
-                  className="h-12 rounded-[20px] bg-primary px-4 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.7)] transition-colors hover:bg-secondary"
+                  className="h-12 rounded-[20px] bg-primary px-4 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(229, 46, 46,0.7)] transition-colors hover:bg-secondary"
                   style={{ minWidth: "128px" }}
                 >
                   {isAddAddonOpen ? "Close" : "Add Add-on"}
@@ -2270,8 +2270,8 @@ export default function Inventory() {
                     onClick={() => setSelectedFilter(option.value)}
                     className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors ${
                       isActive
-                        ? "border-primary bg-primary text-white shadow-[0_14px_28px_-24px_rgba(126,56,102,0.8)]"
-                        : "border-[#e7d5e0] bg-[#fcf7fb] text-[#6d6470] hover:border-[#d5bdd0] hover:bg-white"
+                        ? "border-primary bg-primary text-white shadow-[0_14px_28px_-24px_rgba(229, 46, 46,0.8)]"
+                        : "border-[#f3d6d6] bg-[#fef7f7] text-[#6d6470] hover:border-[#ecc7c7] hover:bg-white"
                     }`}
                   >
                     <span>{option.label}</span>
@@ -2782,7 +2782,7 @@ export default function Inventory() {
                             name="filter"
                             checked={selectedFilter === option.value}
                             onChange={() => setSelectedFilter(option.value)}
-                            style={{ accentColor: "#7e3866" }}
+                            style={{ accentColor: "#e52e2e" }}
                             className="w-5 h-5 border-gray-300"
                           />
                           <span className="text-base text-gray-900">{option.label}</span>
@@ -2889,7 +2889,7 @@ export default function Inventory() {
                         name="outOfStockOption"
                         checked={selectedOption === "specific-time"}
                         onChange={() => setSelectedOption("specific-time")}
-                        style={{ accentColor: "#7e3866" }}
+                        style={{ accentColor: "#e52e2e" }}
                           className="ml-auto w-5 h-5 border-gray-300"
                       />
                     </div>
@@ -2905,7 +2905,7 @@ export default function Inventory() {
                         name="outOfStockOption"
                         checked={selectedOption === "next-business-day"}
                         onChange={() => setSelectedOption("next-business-day")}
-                        style={{ accentColor: "#7e3866" }}
+                        style={{ accentColor: "#e52e2e" }}
                         className="ml-auto w-5 h-5 border-gray-300"
                       />
                     </div>
@@ -2921,7 +2921,7 @@ export default function Inventory() {
                         name="outOfStockOption"
                         checked={selectedOption === "custom-date-time"}
                         onChange={() => setSelectedOption("custom-date-time")}
-                        style={{ accentColor: "#7e3866" }}
+                        style={{ accentColor: "#e52e2e" }}
                         className="ml-auto w-5 h-5 border-gray-300"
                       />
                     </div>
@@ -2956,7 +2956,7 @@ export default function Inventory() {
                           name="outOfStockOption"
                           checked={selectedOption === "manual"}
                           onChange={() => setSelectedOption("manual")}
-                          style={{ accentColor: "#7e3866" }}
+                          style={{ accentColor: "#e52e2e" }}
                           className="ml-auto w-5 h-5 border-gray-300"
                         />
                       </div>
@@ -3116,7 +3116,7 @@ export default function Inventory() {
                     <label
                       htmlFor="bulk-file-input"
                       className={`w-full flex flex-col items-center justify-center gap-3 p-8 rounded-[28px] border-2 border-dashed ${
-                        selectedBulkFile ? 'border-green-300 bg-green-50' : 'border-[#ead6e3] bg-[#fcf7fb] hover:bg-[#f9f0f7] hover:border-[#d5bdd0]'
+                        selectedBulkFile ? 'border-green-300 bg-green-50' : 'border-[#f4d9d9] bg-[#fef7f7] hover:bg-[#fdf0f0] hover:border-[#ecc7c7]'
                       } transition-all cursor-pointer`}
                     >
                       <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm">
@@ -3141,7 +3141,7 @@ export default function Inventory() {
                     <button
                       onClick={handleBulkSubmit}
                       disabled={isUploadingBulk}
-                      className="w-full py-4 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-[#6a2f56] transition-all disabled:opacity-50"
+                      className="w-full py-4 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-[#c92424] transition-all disabled:opacity-50"
                     >
                       {isUploadingBulk ? (
                         <>
@@ -3244,7 +3244,7 @@ export default function Inventory() {
             type="button"
             whileTap={{ scale: 0.96 }}
             onClick={() => setIsMenuOpen((prev) => !prev)}
-            className="flex items-center gap-2 rounded-full border border-[#ead6e3] bg-white/95 px-4 py-3 text-sm font-semibold text-secondary shadow-[0_18px_36px_-28px_rgba(126,56,102,0.45)]"
+            className="flex items-center gap-2 rounded-full border border-[#f4d9d9] bg-white/95 px-4 py-3 text-sm font-semibold text-secondary shadow-[0_18px_36px_-28px_rgba(229, 46, 46,0.45)]"
           >
             <span className="w-5 h-5 flex items-center justify-center">
               {isMenuOpen ? (
@@ -3274,10 +3274,10 @@ export default function Inventory() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.2 }}
-                  className="fixed right-4 bottom-36 z-30 h-[45vh] w-[60vw] max-w-sm overflow-hidden rounded-[28px] border border-[#ead6e3] bg-white shadow-[0_24px_60px_-30px_rgba(126,56,102,0.45)]"
+                  className="fixed right-4 bottom-36 z-30 h-[45vh] w-[60vw] max-w-sm overflow-hidden rounded-[28px] border border-[#f4d9d9] bg-white shadow-[0_24px_60px_-30px_rgba(229, 46, 46,0.45)]"
                 >
                   <div className="h-full flex flex-col">
-                    <div className="bg-[linear-gradient(135deg,#fcf4f9_0%,#f6e8f1_100%)] px-4 pt-4 pb-3">
+                    <div className="bg-[linear-gradient(135deg,#fef4f4_0%,#f8e7e6_100%)] px-4 pt-4 pb-3">
                       <p className="text-sm font-semibold text-secondary">Jump to category</p>
                     </div>
                     <div className="mx-4 h-px bg-slate-200" />

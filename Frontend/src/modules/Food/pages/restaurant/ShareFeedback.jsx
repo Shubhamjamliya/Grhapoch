@@ -132,7 +132,7 @@ export default function ShareFeedback() {
             <div className="flex items-end gap-2 w-full justify-between">
               <div className="w-10 h-20 rounded-full bg-indigo-300" />
               <div className="w-10 h-32 rounded-full bg-pink-300" />
-              <div className="w-10 h-24 rounded-full bg-purple-300" />
+              <div className="w-10 h-24 rounded-full bg-red-300" />
               <div className="w-10 h-28 rounded-full bg-green-300" />
               <div className="w-10 h-22 rounded-full bg-yellow-300" />
             </div>

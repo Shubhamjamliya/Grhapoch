@@ -464,10 +464,10 @@ export default function OrderDetectDelivery() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-500 mb-1">Delivery Boy Assigned</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.deliveryBoyAssigned}</p>
+              <p className="text-2xl font-bold text-red-600">{stats.deliveryBoyAssigned}</p>
             </div>
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <Truck className="w-6 h-6 text-purple-600" />
+            <div className="p-3 bg-red-50 rounded-lg">
+              <Truck className="w-6 h-6 text-red-600" />
             </div>
           </div>
         </div>

@@ -77,11 +77,11 @@
 }
 
 /* Dynamic overrides for hardcoded restaurant hex colors found in pages */
-.restaurant-theme [class~="bg-[#6a2f56]"] {
+.restaurant-theme [class~="bg-[#c92424]"] {
   background-color: var(--rt-primary-strong) !important;
 }
 
-.restaurant-theme [class~="hover:bg-[#6a2f56]"]:hover {
+.restaurant-theme [class~="hover:bg-[#c92424]"]:hover {
   background-color: var(--rt-primary-strong) !important;
 }
 
@@ -89,21 +89,21 @@
   background-color: color-mix(in srgb, var(--rt-primary) 8%, #ffffff) !important;
 }
 
-.restaurant-theme [class~="bg-[#fcf7fb]"] {
+.restaurant-theme [class~="bg-[#fef7f7]"] {
   background-color: color-mix(in srgb, var(--rt-primary) 3%, #ffffff) !important;
 }
 
-.restaurant-theme [class~="bg-[#f9f0f7]"],
-.restaurant-theme [class~="hover:bg-[#f9f0f7]"]:hover {
+.restaurant-theme [class~="bg-[#fdf0f0]"],
+.restaurant-theme [class~="hover:bg-[#fdf0f0]"]:hover {
   background-color: color-mix(in srgb, var(--rt-primary) 6%, #ffffff) !important;
 }
 
-.restaurant-theme [class~="border-[#e7d5e0]"] {
+.restaurant-theme [class~="border-[#f3d6d6]"] {
   border-color: color-mix(in srgb, var(--rt-primary) 15%, #ffffff) !important;
 }
 
-.restaurant-theme [class~="border-[#d5bdd0]"],
-.restaurant-theme [class~="hover:border-[#d5bdd0]"]:hover {
+.restaurant-theme [class~="border-[#ecc7c7]"],
+.restaurant-theme [class~="hover:border-[#ecc7c7]"]:hover {
   border-color: color-mix(in srgb, var(--rt-primary) 25%, #ffffff) !important;
 }
 
@@ -111,7 +111,7 @@
   color: var(--rt-muted) !important;
 }
 
-.restaurant-theme [class~="text-[#6b4d62]"] {
+.restaurant-theme [class~="text-[#6b4d4d]"] {
   color: color-mix(in srgb, var(--rt-primary-strong) 40%, var(--rt-muted)) !important;
 }
 

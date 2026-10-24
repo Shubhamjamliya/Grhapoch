@@ -712,12 +712,12 @@ export default function Customers() {
                     {"\u20B9"}{(userDetails.totalOrderAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-purple-50 rounded-lg p-3">
+                <div className="bg-red-50 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <CalendarIcon className="w-4 h-4 text-purple-600" />
+                    <CalendarIcon className="w-4 h-4 text-red-600" />
                     <span className="text-xs font-semibold text-slate-700">Member Since</span>
                   </div>
-                  <p className="text-base font-bold text-purple-600">{formatDateTime(userDetails.joiningDate)}</p>
+                  <p className="text-base font-bold text-red-600">{formatDateTime(userDetails.joiningDate)}</p>
                 </div>
               </div>
 

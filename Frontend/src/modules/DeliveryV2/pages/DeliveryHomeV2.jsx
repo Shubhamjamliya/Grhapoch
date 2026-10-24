@@ -467,7 +467,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
     { title: "Accident Helpline", subtitle: "Report an accident", icon: <AlertTriangle className="text-orange-600" />, phone: emergencyNumbers.accidentHelpline },
     { title: "Contact Police", subtitle: "Nearest police support", icon: <AlertTriangle className="text-blue-600" />, phone: emergencyNumbers.contactPolice },
     { title: "Insurance", subtitle: "Policy & claim help", icon: <AlertTriangle className="text-green-600" />, phone: emergencyNumbers.insurance },
-    { title: "Team Leader", subtitle: "Contact your assigned team leader", icon: <UserIcon className="text-purple-600" />, phone: emergencyNumbers.teamLeader },
+    { title: "Team Leader", subtitle: "Contact your assigned team leader", icon: <UserIcon className="text-red-600" />, phone: emergencyNumbers.teamLeader },
   ];
 
   // Reset simulation when trip phase/order/mode changes.

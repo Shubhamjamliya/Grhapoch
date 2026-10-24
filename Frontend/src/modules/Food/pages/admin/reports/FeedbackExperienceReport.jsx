@@ -178,7 +178,7 @@ export default function FeedbackExperienceReport() {
         {/* Page Header */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Feedback Experience Report</h1>
@@ -324,8 +324,8 @@ export default function FeedbackExperienceReport() {
                   <p className="text-sm font-medium text-slate-600 mb-1">Total Feedback</p>
                   <p className="text-2xl font-bold text-slate-900">{statistics.totalFeedback || 0}</p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
+                  <MessageSquare className="w-6 h-6 text-red-600" />
                 </div>
               </div>
             </div>

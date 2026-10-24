@@ -538,7 +538,7 @@ export default function PaymentReconciliation() {
                       {open ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
                       <span
                         className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                          r.kind === "full" ? "bg-blue-100 text-blue-700" : r.kind === "manual" ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-600"
+                          r.kind === "full" ? "bg-blue-100 text-blue-700" : r.kind === "manual" ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {r.kind === "self_heal" ? "self-heal" : r.kind}

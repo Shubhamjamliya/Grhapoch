@@ -346,7 +346,7 @@ export default function RestaurantReviews() {
                 <div className="bg-emerald-50 rounded-lg p-4"><p className="text-xs text-emerald-600 mb-1">Restaurant</p><p className="text-sm font-semibold text-emerald-700">{selectedReview.restaurant}</p></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-purple-50 rounded-lg p-4"><p className="text-xs text-purple-600 mb-1">Customer</p><p className="text-sm font-semibold text-purple-700">{selectedReview.customer}</p></div>
+                <div className="bg-red-50 rounded-lg p-4"><p className="text-xs text-red-600 mb-1">Customer</p><p className="text-sm font-semibold text-red-700">{selectedReview.customer}</p></div>
                 <div className="bg-orange-50 rounded-lg p-4">
                   <p className="text-xs text-orange-600 mb-2 font-semibold">Rating</p>
                   <div className="flex items-center gap-3">

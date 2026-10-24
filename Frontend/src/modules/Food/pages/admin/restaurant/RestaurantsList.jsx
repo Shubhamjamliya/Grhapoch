@@ -2510,7 +2510,7 @@ export default function RestaurantsList() {
                             <p className="text-xs text-slate-500 mb-2">Cuisines (at registration)</p>
                             <div className="flex flex-wrap gap-2">
                               {r.onboarding.step2.cuisines.map((cuisine, idx) => (
-                                <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                                <span key={idx} className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
                                   {cuisine}
                                 </span>
                               ))}

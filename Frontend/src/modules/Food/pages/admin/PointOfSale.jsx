@@ -501,10 +501,10 @@ export default function PointOfSale() {
               {/* Commission Rate */}
               <div className="bg-white rounded-lg shadow-sm border border-[#e3e6ef] p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <Award className="w-6 h-6 text-purple-600" />
+                  <div className="p-3 bg-red-100 rounded-lg">
+                    <Award className="w-6 h-6 text-red-600" />
                   </div>
-                  <span className="text-sm font-semibold text-purple-600">{analyticsData.commissionPercentage}%</span>
+                  <span className="text-sm font-semibold text-red-600">{analyticsData.commissionPercentage}%</span>
                   </div>
                 <h3 className="text-sm font-medium text-[#8a94aa] mb-1">Commission Rate</h3>
                 <p className="text-2xl font-bold text-[#334257]">{analyticsData.commissionPercentage}%</p>

@@ -70,7 +70,7 @@ export default function RefundModal({ isOpen, onOpenChange, order, onConfirm, is
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
-            <Wallet className="w-5 h-5 text-purple-600" />
+            <Wallet className="w-5 h-5 text-red-600" />
             Wallet Refund
           </DialogTitle>
           <DialogDescription className="text-slate-600">
@@ -96,7 +96,7 @@ export default function RefundModal({ isOpen, onOpenChange, order, onConfirm, is
                 className={`w-full pl-8 pr-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 transition-colors ${
                   error
                     ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-                    : "border-slate-300 focus:border-purple-500 focus:ring-purple-200"
+                    : "border-slate-300 focus:border-red-500 focus:ring-red-200"
                 } ${isProcessing ? "bg-slate-100 cursor-not-allowed" : "bg-white"}`}
               />
             </div>
@@ -108,8 +108,8 @@ export default function RefundModal({ isOpen, onOpenChange, order, onConfirm, is
             </p>
           </div>
 
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-            <p className="text-sm text-purple-800">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-sm text-red-800">
               <span className="font-semibold">Note:</span> यह पैसा ग्राहक के वॉलेट में क्रेडिट हो जाएगा और ऑर्डर का स्टेटस "Refunded" हो जाएगा।
             </p>
           </div>
@@ -127,7 +127,7 @@ export default function RefundModal({ isOpen, onOpenChange, order, onConfirm, is
           <Button
             onClick={handleConfirm}
             disabled={isProcessing || !refundAmount || parseFloat(refundAmount) <= 0}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
           >
             {isProcessing ? "Processing..." : "Refund"}
           </Button>

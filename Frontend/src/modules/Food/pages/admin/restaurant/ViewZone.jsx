@@ -218,10 +218,10 @@ export default function ViewZone() {
 
       const polygon = new google.maps.Polygon({
         paths: path,
-        strokeColor: "#9333ea",
+        strokeColor: "#ee352f",
         strokeOpacity: 0.8,
         strokeWeight: 3,
-        fillColor: "#9333ea",
+        fillColor: "#ee352f",
         fillOpacity: 0.35,
         editable: false,
         draggable: false,
@@ -268,7 +268,7 @@ export default function ViewZone() {
             icon: {
               path: google.maps.SymbolPath.CIRCLE,
               scale: 8,
-              fillColor: "#9333ea",
+              fillColor: "#ee352f",
               fillOpacity: 1,
               strokeColor: "#ffffff",
               strokeWeight: 2,

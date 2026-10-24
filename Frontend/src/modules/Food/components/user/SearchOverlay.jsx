@@ -170,7 +170,7 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <form onSubmit={handleSearchSubmit} className="flex items-center gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary dark:text-[#a05485] z-10" strokeWidth={2.5} />
+              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary dark:text-[#e05a5a] z-10" strokeWidth={2.5} />
               <Input
                 ref={inputRef}
                 value={searchValue}
@@ -192,7 +192,7 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
                   <button
                     type="button"
                     onClick={startListening}
-                    className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-primary dark:text-[#a05485] transition-all active:scale-90"
+                    className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-primary dark:text-[#e05a5a] transition-all active:scale-90"
                   >
                     <Mic className="h-5 w-5" />
                   </button>

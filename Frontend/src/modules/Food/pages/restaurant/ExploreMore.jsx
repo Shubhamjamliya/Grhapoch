@@ -328,7 +328,7 @@ function TimePickerWheel({
           <div className="border-t border-gray-200 px-4 py-4 flex justify-center">
             <button
               onClick={handleConfirm}
-              className="text-primary hover:text-[#6a2f56] font-bold text-base transition-colors"
+              className="text-primary hover:text-[#c92424] font-bold text-base transition-colors"
             >
               Okay
             </button>
@@ -1168,7 +1168,7 @@ export default function ExploreMore() {
                     setLogoutConfirmOpen(false)
                   }}
                   disabled={isLoggingOut}
-                  className="rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-white transition-all hover:bg-[#6a2f56] active:scale-95 disabled:opacity-50"
+                  className="rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-white transition-all hover:bg-[#c92424] active:scale-95 disabled:opacity-50"
                 >
                   {isLoggingOut ? "Logging out..." : "Yes"}
                 </button>
@@ -1676,7 +1676,7 @@ export default function ExploreMore() {
                 {/* Submit Button */}
                 <button
                   onClick={handleSubmitScheduleOff}
-                  className="w-full bg-primary hover:bg-[#6a2f56] text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md active:scale-[0.98] mt-4"
+                  className="w-full bg-primary hover:bg-[#c92424] text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md active:scale-[0.98] mt-4"
                 >
                   Submit
                 </button>
@@ -1762,7 +1762,7 @@ export default function ExploreMore() {
                     setStartTime({ hour: "9", minute: "00", period: "am" })
                     setEndTime({ hour: "5", minute: "00", period: "pm" })
                   }}
-                  className="w-full bg-primary text-white py-3.5 rounded-xl font-bold text-sm hover:bg-[#6a2f56] transition-all shadow-md active:scale-[0.98]"
+                  className="w-full bg-primary text-white py-3.5 rounded-xl font-bold text-sm hover:bg-[#c92424] transition-all shadow-md active:scale-[0.98]"
                 >
                   Done 
                 </button>

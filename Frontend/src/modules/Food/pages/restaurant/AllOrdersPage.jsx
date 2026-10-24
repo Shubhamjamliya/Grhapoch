@@ -432,7 +432,7 @@ export default function AllOrdersPage() {
       case "READY":
         return "bg-blue-600 text-white"
       case "OUT FOR DELIVERY":
-        return "bg-purple-600 text-white"
+        return "bg-red-600 text-white"
       default:
         return "bg-gray-600 text-white"
     }

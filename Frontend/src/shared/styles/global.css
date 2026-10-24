@@ -18,31 +18,31 @@
   --radius: 0.625rem;
   
   --background: #F9F9FB;
-  --foreground: #3c0f3d;
+  --foreground: #3d0f0f;
   --card: #ffffff;
-  --card-foreground: #3c0f3d;
+  --card-foreground: #3d0f0f;
   --popover: #ffffff;
-  --popover-foreground: #3c0f3d;
-  --primary: #7e3866;
+  --popover-foreground: #3d0f0f;
+  --primary: #e52e2e;
   --primary-foreground: #ffffff;
-  --secondary: #55254b;
+  --secondary: #a31b1b;
   --secondary-foreground: #ffffff;
   --muted: #f1f5f9;
-  --muted-foreground: #b18da5;
-  --accent: #b18da5;
+  --muted-foreground: #c99a9a;
+  --accent: #c99a9a;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #7e3866;
+  --ring: #e52e2e;
   --sidebar: #ffffff;
-  --sidebar-foreground: #3c0f3d;
-  --sidebar-primary: #7e3866;
+  --sidebar-foreground: #3d0f0f;
+  --sidebar-primary: #e52e2e;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #55254b;
+  --sidebar-accent: #a31b1b;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #7e3866;
+  --sidebar-ring: #e52e2e;
 }
 
 @theme inline {
@@ -78,7 +78,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
   
   --color-page-bg: #F9F9FB;
-  --color-primary-orange: #7e3866;
+  --color-primary-orange: #e52e2e;
   --font-poppins: var(--font-poppins);
   --font-outfit: var(--font-outfit);
 }

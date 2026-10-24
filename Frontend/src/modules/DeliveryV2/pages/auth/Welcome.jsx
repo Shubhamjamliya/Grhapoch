@@ -249,7 +249,7 @@ export default function DeliveryWelcome() {
                 style={{
                   left: `${Math.random() * 100}%`,
                   top: `-5%`,
-                  backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][Math.floor(Math.random() * 6)],
+                  backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#f26560', '#f04a44'][Math.floor(Math.random() * 6)],
                 }}
                 initial={{
                   y: -50,
@@ -302,7 +302,7 @@ export default function DeliveryWelcome() {
                   key={i}
                   className="absolute w-2 h-2 rounded-full"
                   style={{
-                    backgroundColor: ['#fbbf24', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#3b82f6'][Math.floor(Math.random() * 6)],
+                    backgroundColor: ['#fbbf24', '#f59e0b', '#ef4444', '#f04a44', '#f26560', '#3b82f6'][Math.floor(Math.random() * 6)],
                     top: '50%',
                     left: '50%',
                   }}

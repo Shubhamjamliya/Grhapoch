@@ -11,13 +11,13 @@ import collectionsBanner from "@food/assets/collectionspagebanner.png"
 // Gradient colors for collection cards
 const gradientColors = [
   "bg-gradient-to-br from-red-400 to-red-600",
-  "bg-gradient-to-br from-orange-400 to-#55254b",
-  "bg-gradient-to-br from-purple-500 to-pink-600",
+  "bg-gradient-to-br from-orange-400 to-#a31b1b",
+  "bg-gradient-to-br from-red-500 to-pink-600",
   "bg-gradient-to-br from-green-400 to-emerald-600",
   "bg-gradient-to-br from-orange-400 to-red-500",
   "bg-gradient-to-br from-amber-400 to-yellow-600",
   "bg-gradient-to-br from-pink-400 to-rose-600",
-  "bg-gradient-to-br from-amber-400 to-#55254b",
+  "bg-gradient-to-br from-amber-400 to-#a31b1b",
 ]
 
 export default function Collections() {

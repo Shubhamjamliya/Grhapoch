@@ -233,8 +233,8 @@ export default function DeliveryEarnings() {
                 <p className="text-sm text-slate-600 mb-1">Total Orders</p>
                 <p className="text-2xl font-bold text-slate-900">{summary.totalOrders || 0}</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
+                <FileText className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>

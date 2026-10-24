@@ -265,8 +265,8 @@ export default function AdminHome() {
                 title="Platform fee"
                 value={formatCurrency(platformFeeTotal)}
                 helper={`Platform service fees: ${periodLabel}`}
-                icon={<CreditCard className="h-5 w-5 text-purple-600" />}
-                accent="bg-purple-200/40"
+                icon={<CreditCard className="h-5 w-5 text-red-600" />}
+                accent="bg-red-200/40"
                 path="/admin/food/fee-settings"
               />
               {/* 5. GST */}
@@ -359,8 +359,8 @@ export default function AdminHome() {
                 title="Total foods"
                 value={totalFoods.toLocaleString("en-IN")}
                 helper="Approved menu items"
-                icon={<Package className="h-5 w-5 text-purple-600" />}
-                accent="bg-purple-200/40"
+                icon={<Package className="h-5 w-5 text-red-600" />}
+                accent="bg-red-200/40"
                 path="/admin/food/foods"
               />
               <MetricCard
@@ -400,8 +400,8 @@ export default function AdminHome() {
                           <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="comFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#a855f7" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#f25f5a" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#f25f5a" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -424,7 +424,7 @@ export default function AdminHome() {
                       <Area
                         type="monotone"
                         dataKey="commission"
-                        stroke="#a855f7"
+                        stroke="#f25f5a"
                         fillOpacity={1}
                         fill="url(#comFill)"
                         name="Commission"
@@ -526,7 +526,7 @@ export default function AdminHome() {
                       />
                       <Legend />
                       <Bar dataKey="orders" fill="#0ea5e9" radius={[8, 8, 0, 0]} name="Orders" />
-                      <Bar dataKey="commission" fill="#a855f7" radius={[8, 8, 0, 0]} name="Commission" />
+                      <Bar dataKey="commission" fill="#f25f5a" radius={[8, 8, 0, 0]} name="Commission" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -557,7 +557,7 @@ export default function AdminHome() {
                         case "restaurant":
                           return <Store className="h-4 w-4 text-blue-600" />
                         case "delivery":
-                          return <Truck className="h-4 w-4 text-purple-600" />
+                          return <Truck className="h-4 w-4 text-red-600" />
                         case "customer":
                           return <UserCircle className="h-4 w-4 text-pink-600" />
                         default:
@@ -576,7 +576,7 @@ export default function AdminHome() {
                         case "restaurant":
                           return "bg-blue-50"
                         case "delivery":
-                          return "bg-purple-50"
+                          return "bg-red-50"
                         case "customer":
                           return "bg-pink-50"
                         default:

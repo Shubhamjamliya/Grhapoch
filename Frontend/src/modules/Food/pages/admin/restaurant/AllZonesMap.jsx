@@ -197,7 +197,7 @@ export default function AllZonesMap() {
     infoWindowsRef.current.forEach((infoWindow) => infoWindow?.close())
     infoWindowsRef.current = []
 
-    const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"]
+    const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#f26560", "#f04a44", "#06b6d4", "#84cc16"]
     const bounds = new google.maps.LatLngBounds()
 
     zones.forEach((zone, index) => {

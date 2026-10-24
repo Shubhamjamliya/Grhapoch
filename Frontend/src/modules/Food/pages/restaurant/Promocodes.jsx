@@ -140,7 +140,7 @@ export default function Promocodes() {
             <p className="text-gray-500 mb-6 px-4">Create your first promo code to boost your sales and attract more customers!</p>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-primary text-white font-bold py-3 px-6 rounded-full hover:bg-[#6a2f56] transition-colors active:scale-95"
+              className="bg-primary text-white font-bold py-3 px-6 rounded-full hover:bg-[#c92424] transition-colors active:scale-95"
             >
               Create Promo Code
             </button>
@@ -218,7 +218,7 @@ export default function Promocodes() {
       {!isModalOpen && promocodes.length > 0 && (
         <button
           onClick={() => setIsModalOpen(true)}
-          className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[#6a2f56] hover:scale-105 active:scale-95 transition-all z-20 lg:bottom-6"
+          className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[#c92424] hover:scale-105 active:scale-95 transition-all z-20 lg:bottom-6"
         >
           <Plus className="w-6 h-6" />
         </button>
@@ -371,7 +371,7 @@ export default function Promocodes() {
                   type="submit"
                   form="promoForm"
                   disabled={isSubmitting}
-                  className="w-full bg-primary text-white font-bold py-3.5 px-4 rounded-xl hover:bg-[#6a2f56] active:scale-[0.98] transition-all disabled:opacity-70 flex justify-center items-center"
+                  className="w-full bg-primary text-white font-bold py-3.5 px-4 rounded-xl hover:bg-[#c92424] active:scale-[0.98] transition-all disabled:opacity-70 flex justify-center items-center"
                 >
                   {isSubmitting ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

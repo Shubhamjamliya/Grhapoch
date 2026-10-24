@@ -350,7 +350,7 @@ export default function DiningRestaurantDetails() {
               onClick={() => isDiningEnabled && setIsBookingSheetOpen(true)}
               disabled={!isDiningEnabled}
               className={`flex h-[52px] w-full items-center justify-center gap-2 rounded-full border px-3 text-[15px] font-medium shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-all ${isDiningEnabled
-                  ? "border-[#f1ebee] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#2b2118] dark:text-slate-100"
+                  ? "border-[#f1ecec] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#2b2118] dark:text-slate-100"
                   : "cursor-not-allowed border-[#f2d7da] dark:border-red-900/30 bg-[#fff5f6] dark:bg-red-950/20 text-[#c06a79] opacity-80"
                 }`}
             >
@@ -394,7 +394,7 @@ export default function DiningRestaurantDetails() {
         <section id="restaurant-prebook">
           <div>
             <h2 className="text-[29px] font-black leading-none text-[#23180f] dark:text-slate-100">Pre-book offers</h2>
-            <p className="mt-1 text-[15px] text-primary dark:text-purple-400">Limited slots with extra offers</p>
+            <p className="mt-1 text-[15px] text-primary dark:text-red-400">Limited slots with extra offers</p>
           </div>
 
           <div className="mt-3 overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#0f4a87,#0b2954_70%)] text-white shadow-[0_10px_26px_rgba(8,52,95,0.25)]">
@@ -526,7 +526,7 @@ export default function DiningRestaurantDetails() {
             onClick={() => isDiningEnabled && setIsBookingSheetOpen(true)}
             disabled={!isDiningEnabled}
             className={`h-12 w-full rounded-2xl border text-[17px] font-medium transition-all ${isDiningEnabled
-                ? "border-[#b18da5] bg-white dark:bg-slate-900 text-primary dark:text-purple-400 hover:bg-[#fdfafc] dark:hover:bg-slate-800"
+                ? "border-[#c99a9a] bg-white dark:bg-slate-900 text-primary dark:text-red-400 hover:bg-[#fffafa] dark:hover:bg-slate-800"
                 : "cursor-not-allowed border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-400 dark:text-slate-600 opacity-80"
               }`}
           >
@@ -575,7 +575,7 @@ export default function DiningRestaurantDetails() {
                     disabled={isBooked || isTooLarge}
                     onClick={() => setSelectedGuests(count)}
                     className={`relative rounded-2xl border px-3 py-4 text-sm font-bold transition-all ${selectedGuests === count
-                        ? "border-primary bg-[#fdfafc] dark:bg-purple-950/30 text-primary scale-[1.02] shadow-sm"
+                        ? "border-primary bg-[#fffafa] dark:bg-red-950/30 text-primary scale-[1.02] shadow-sm"
                         : isBooked
                           ? "border-red-100 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20 text-red-400 cursor-not-allowed opacity-70"
                           : isTooLarge

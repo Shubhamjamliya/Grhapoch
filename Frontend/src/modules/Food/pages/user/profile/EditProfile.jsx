@@ -536,7 +536,7 @@ export default function EditProfile() {
                             borderColor: '#9ca3af',
                           },
                           '&.Mui-focused fieldset': {
-                            borderColor: '#7e3866',
+                            borderColor: '#e52e2e',
                             borderWidth: '1px',
                           },
                           '& .MuiSvgIcon-root': {
@@ -586,7 +586,7 @@ export default function EditProfile() {
                             borderColor: '#9ca3af',
                           },
                           '&.Mui-focused fieldset': {
-                            borderColor: '#7e3866',
+                            borderColor: '#e52e2e',
                             borderWidth: '1px',
                           },
                           '& .MuiSvgIcon-root': {

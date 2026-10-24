@@ -260,10 +260,10 @@ function RestaurantDetails({ restaurant }) {
           <p className="text-xs text-red-600 font-medium">Cancelled</p>
           <p className="text-2xl font-bold text-red-700">{stats.cancelledOrders || 0}</p>
         </div>
-        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <span className="w-5 h-5 flex items-center justify-center text-purple-500 mb-2 font-bold text-lg">₹</span>
-          <p className="text-xs text-purple-600 font-medium">Revenue</p>
-          <p className="text-2xl font-bold text-purple-700">₹{stats.revenue?.toFixed(0) || 0}</p>
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
+          <span className="w-5 h-5 flex items-center justify-center text-red-500 mb-2 font-bold text-lg">₹</span>
+          <p className="text-xs text-red-600 font-medium">Revenue</p>
+          <p className="text-2xl font-bold text-red-700">₹{stats.revenue?.toFixed(0) || 0}</p>
         </div>
       </div>
 

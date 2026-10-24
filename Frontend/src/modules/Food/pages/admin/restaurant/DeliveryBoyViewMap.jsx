@@ -417,7 +417,7 @@ export default function DeliveryBoyViewMap() {
 
     const colors = [
       "#3b82f6", "#10b981", "#f59e0b", "#ef4444",
-      "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16",
+      "#f26560", "#f04a44", "#06b6d4", "#84cc16",
     ]
     const bounds = new google.maps.LatLngBounds()
 
@@ -619,7 +619,7 @@ export default function DeliveryBoyViewMap() {
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center">
               <Bike className="w-5 h-5 text-white" />
             </div>
             <div>

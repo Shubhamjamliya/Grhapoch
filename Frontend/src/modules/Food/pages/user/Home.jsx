@@ -2031,11 +2031,11 @@ export default function Home() {
 
   if (shouldShowOutOfZoneHome) {
     return (
-      <div className="fixed inset-0 z-[100] w-full bg-[#1e1332] overflow-hidden flex flex-col justify-center">
+      <div className="fixed inset-0 z-[100] w-full bg-[#36100f] overflow-hidden flex flex-col justify-center">
         <img src={outOfZoneBg} alt="Out of zone background" className="absolute inset-0 w-full h-full object-cover z-0" />
 
         {/* Dark overlay at bottom for text readability */}
-        <div className="absolute bottom-0 w-full h-[70%] bg-gradient-to-t from-[#1b152d] via-black/60 to-transparent z-10 pointer-events-none"></div>
+        <div className="absolute bottom-0 w-full h-[70%] bg-gradient-to-t from-[#301312] via-black/60 to-transparent z-10 pointer-events-none"></div>
 
         <div className="relative z-20 flex flex-col items-center justify-center px-6 text-center h-full pb-20">
           <h2 className="text-3xl font-black text-white mb-3 tracking-tight drop-shadow-lg">
@@ -2187,7 +2187,7 @@ export default function Home() {
           {/* Brand Top Section (Dark) */}
           {/* Decoupled Dark Background - Dynamic height based on actual components to prevent clipping sticky elements while covering properly */}
           <div 
-             className="absolute top-0 left-0 right-0 overflow-hidden rounded-b-[28px] bg-gradient-to-b from-[#3a142c] to-[#1a0a14] shadow-lg pointer-events-none z-0 transition-all duration-300 [transform:translateZ(0)] [mask-image:-webkit-radial-gradient(white,black)]"
+             className="absolute top-0 left-0 right-0 overflow-hidden rounded-b-[28px] bg-gradient-to-b from-[#3f110f] to-[#1c0908] shadow-lg pointer-events-none z-0 transition-all duration-300 [transform:translateZ(0)] [mask-image:-webkit-radial-gradient(white,black)]"
              style={{ height: festVideoActive ? '360px' : (headerBgHeight > 0 ? `${headerBgHeight}px` : (activeTab === 'food' ? '300px' : '140px')) }}
           >
             {festVideoActive && (
@@ -2613,7 +2613,7 @@ export default function Home() {
                   <motion.div
                     animate={{ y: [0, -25, 0] }}
                     transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-                    className="relative z-10 w-44 h-44 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-sm rounded-[3rem] shadow-[0_20px_50px_rgba(126,56,102,0.3)] flex items-center justify-center border border-white/50 dark:border-white/10 overflow-hidden"
+                    className="relative z-10 w-44 h-44 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-sm rounded-[3rem] shadow-[0_20px_50px_rgba(229, 46, 46,0.3)] flex items-center justify-center border border-white/50 dark:border-white/10 overflow-hidden"
                   >
                     <img
                       src={chefMascot}

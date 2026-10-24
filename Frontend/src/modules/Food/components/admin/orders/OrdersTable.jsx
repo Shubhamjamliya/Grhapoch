@@ -379,7 +379,7 @@ export default function OrdersTable({
                       return (
                         <span className={`text-sm font-medium ${
                           isCod ? 'text-amber-600' : 
-                          isWallet ? 'text-purple-600' : 
+                          isWallet ? 'text-red-600' : 
                           'text-emerald-600'
                         }`}>
                           {paymentTypeDisplay}
@@ -579,7 +579,7 @@ export default function OrdersTable({
                           {order.refundStatus === 'processed' || order.refundStatus === 'initiated' ? (
                             <span className={`px-3 py-1.5 rounded-md text-xs font-medium ${
                               order.paymentType === "Wallet" || order.payment?.method === "wallet"
-                                ? "bg-purple-100 text-purple-700"
+                                ? "bg-red-100 text-red-700"
                                 : "bg-emerald-100 text-emerald-700"
                             }`}>
                               {order.paymentType === "Wallet" || order.payment?.method === "wallet" 
@@ -591,7 +591,7 @@ export default function OrdersTable({
                               onClick={() => onRefund(order)}
                               className={`px-3 py-1.5 rounded-md text-white text-xs font-medium hover:opacity-90 transition-colors shadow-sm flex items-center gap-1.5 ${
                                 order.paymentType === "Wallet" || order.payment?.method === "wallet"
-                                  ? "bg-purple-600 hover:bg-purple-700"
+                                  ? "bg-red-600 hover:bg-red-700"
                                   : "bg-blue-600 hover:bg-blue-700"
                               }`}
                               title={order.paymentType === "Wallet" || order.payment?.method === "wallet"

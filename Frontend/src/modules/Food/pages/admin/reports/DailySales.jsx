@@ -272,7 +272,7 @@ export default function DailySales() {
         <div className="rounded-2xl border border-neutral-200/80 bg-white p-3.5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Admin Cut</span>
-            <span className="p-1.5 rounded-xl bg-violet-50 text-violet-600">
+            <span className="p-1.5 rounded-xl bg-red-50 text-red-600">
               <ShieldCheck className="h-4 w-4" />
             </span>
           </div>
@@ -409,7 +409,7 @@ export default function DailySales() {
 
                 <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
                   <span className="text-xs font-semibold text-neutral-500">Admin Cut (Food)</span>
-                  <p className="text-xl font-black text-violet-600 mt-1">{INR(foodSummary.totalAdminEarned)}</p>
+                  <p className="text-xl font-black text-red-600 mt-1">{INR(foodSummary.totalAdminEarned)}</p>
                   <p className="text-[11px] text-neutral-400 mt-0.5">Commission + Platform Fee</p>
                 </div>
 
@@ -605,7 +605,7 @@ export default function DailySales() {
                                 <td className="px-3 py-3 text-right font-bold text-orange-600">
                                   {INR(order.shares.storeEarned)}
                                 </td>
-                                <td className="px-3 py-3 text-right font-bold text-violet-600">
+                                <td className="px-3 py-3 text-right font-bold text-red-600">
                                   {INR(order.shares.adminEarned)}
                                 </td>
                                 <td className="px-3 py-3 text-right font-bold text-indigo-600">
@@ -658,7 +658,7 @@ export default function DailySales() {
                                         <p className="font-bold text-neutral-500 uppercase text-[10px]">Store & Admin Cut</p>
                                         <p className="mt-1">Commission: {INR(order.pricing.commission)}</p>
                                         <p className="text-orange-600 font-semibold">Restaurant Net: {INR(order.shares.storeEarned)}</p>
-                                        <p className="text-violet-600 font-semibold">Admin Net: {INR(order.shares.adminEarned)}</p>
+                                        <p className="text-red-600 font-semibold">Admin Net: {INR(order.shares.adminEarned)}</p>
                                       </div>
 
                                       <div>
@@ -858,7 +858,7 @@ export default function DailySales() {
                             </td>
                             <td className="px-3 py-2.5 text-center font-semibold text-neutral-700">{rest.ordersCount}</td>
                             <td className="px-3 py-2.5 text-right font-semibold text-neutral-900">{INR(rest.grossSales)}</td>
-                            <td className="px-3 py-2.5 text-right font-semibold text-violet-600">-{INR(rest.commissionDeducted)}</td>
+                            <td className="px-3 py-2.5 text-right font-semibold text-red-600">-{INR(rest.commissionDeducted)}</td>
                             <td className="px-3 py-2.5 text-right font-black text-orange-600">{INR(rest.netPayable)}</td>
                           </tr>
                         ))}

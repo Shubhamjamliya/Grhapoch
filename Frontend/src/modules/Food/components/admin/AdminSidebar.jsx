@@ -481,10 +481,13 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
         }
       }
 
+      // The saved sidebar state can come from an older menu and may not list this section yet,
+      // so always set it explicitly instead of relying on it already being a key.
       const next = {}
       Object.keys(prev).forEach((key) => {
-        next[key] = key === sectionKey
+        next[key] = false
       })
+      next[sectionKey] = true
       return next
     })
   }

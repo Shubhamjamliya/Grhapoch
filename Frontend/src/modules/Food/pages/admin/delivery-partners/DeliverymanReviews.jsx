@@ -544,16 +544,16 @@ export default function DeliverymanReviews() {
                     <p className="text-xs text-blue-500 mt-1">{selectedReview.deliverymanPhone}</p>
                   )}
                 </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <p className="text-xs text-purple-600 mb-1">Customer</p>
+                <div className="bg-red-50 rounded-lg p-4">
+                  <p className="text-xs text-red-600 mb-1">Customer</p>
                   <a 
                     href={`/admin/users/${selectedReview.customerId}`}
-                    className="text-sm font-semibold text-purple-700 hover:text-purple-800"
+                    className="text-sm font-semibold text-red-700 hover:text-red-800"
                   >
                     {selectedReview.customer}
                   </a>
                   {selectedReview.customerPhone && (
-                    <p className="text-xs text-purple-500 mt-1">{selectedReview.customerPhone}</p>
+                    <p className="text-xs text-red-500 mt-1">{selectedReview.customerPhone}</p>
                   )}
                 </div>
               </div>
