@@ -27,8 +27,6 @@ import {
 } from '../../delivery/services/deliveryMultiOrderSettings.service.js';
 import { sendRestaurantOnboardingEmail } from '../../../../utils/email.js';
 import { upsertOutletTimingsForRestaurant } from '../../restaurant/services/outletTimings.service.js';
-import { logger } from '../../../../utils/logger.js';
-
 export async function getDeliveryMultiOrderSettingsController(req, res, next) {
     try {
         const data = await getDeliveryMultiOrderSettings();
@@ -1141,10 +1139,6 @@ export async function toggleDeliveryCommissionRuleStatus(req, res, next) {
 export async function getFeeSettings(req, res, next) {
     try {
         const data = await adminService.getFeeSettings();
-        const fs = data?.feeSettings;
-        logger.info(
-            `[FeeSettings] GET ${req.originalUrl} ua="${String(req.headers['user-agent'] || '').slice(0, 80)}" found=${Boolean(fs)} donationEnabled=${fs?.donationEnabled} donationAmounts=${JSON.stringify(fs?.donationAmounts)} donationAmount=${fs?.donationAmount}`,
-        );
         res.status(200).json({ success: true, message: 'Fee settings fetched successfully', data });
     } catch (error) {
         next(error);
@@ -1154,11 +1148,7 @@ export async function getFeeSettings(req, res, next) {
 export async function createOrUpdateFeeSettings(req, res, next) {
     try {
         const body = validateFeeSettingsUpsertDto(req.body || {});
-        const feeSettings = await adminService.upsertFeeSettings(body);
-        logger.info(
-            `[FeeSettings] PUT body.donationEnabled=${body.donationEnabled} body.donationAmounts=${JSON.stringify(body.donationAmounts)} -> saved donationEnabled=${feeSettings?.donationEnabled} donationAmounts=${JSON.stringify(feeSettings?.donationAmounts)}`,
-        );
-        res.status(200).json({ success: true, message: 'Fee settings saved successfully', data: { feeSettings } });
+        const feeSettings = await adminService.upsertFeeSettings(body);        res.status(200).json({ success: true, message: 'Fee settings saved successfully', data: { feeSettings } });
     } catch (error) {
         next(error);
     }
