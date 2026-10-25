@@ -330,7 +330,9 @@ export async function tryAutoAssign(orderId, options = {}) {
       await order.save();
     }
 
-    const maxKm = options.blastAll ? radiusTiers[radiusTiers.length - 1] : radiusTiers[attempt - 1];
+    // Expansion off (admin toggle): alert everyone within the final radius straight away.
+    const expansionEnabled = feeSettings?.dispatchRadiusExpansionEnabled !== false;
+    const maxKm = options.blastAll || !expansionEnabled ? radiusTiers[radiusTiers.length - 1] : radiusTiers[attempt - 1];
     order.dispatch.dispatchAttempt = attempt;
 
     const searchOptions = {
