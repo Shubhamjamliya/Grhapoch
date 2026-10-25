@@ -65,6 +65,7 @@ router.use('/v1/uploads', uploadRoutes);
 router.get('/v1/food/admin/business-settings/public', businessSettingsController.getBusinessSettings);
 router.get('/v1/food/admin/power-scanning/public', businessSettingsController.getPowerScanningSettings);
 router.get('/v1/food/admin/feature-settings/public', adminController.getFeatureSettings);
+router.get('/v1/food/admin/fee-settings/public', adminController.getFeeSettings);
 
 router.use('/v1/food/admin/env', envSettingRoutes);
 router.use('/v1/food/admin', authMiddleware, requireRoles('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN'), restaurantAdminRoutes);
