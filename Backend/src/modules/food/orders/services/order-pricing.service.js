@@ -335,10 +335,10 @@ export async function calculateOrderPricing(userId, dto) {
 
   const couponDiscount = discount;
   const totalDiscount = couponDiscount;
-  // Tip is untaxed and passes 100% to the rider. Fixed, mandatory amount set by admin.
-  const tip = resolveTipAmount(feeSettings);
-  // Donation is untaxed and goes to the platform. Fixed, mandatory amount set by admin.
-  const donation = resolveDonationAmount(feeSettings);
+  // Tip is untaxed and passes 100% to the rider. Customer picks one of the admin presets; mandatory.
+  const tip = resolveTipAmount(feeSettings, dto.tip);
+  // Donation is untaxed and goes to the platform. Customer picks one of the admin presets; mandatory.
+  const donation = resolveDonationAmount(feeSettings, dto.donation);
   const totalBeforeDiscount = subtotal + deliveryFee + tax + platformFee + packagingFee + tip + donation;
   const total = Math.max(0, totalBeforeDiscount - totalDiscount);
 

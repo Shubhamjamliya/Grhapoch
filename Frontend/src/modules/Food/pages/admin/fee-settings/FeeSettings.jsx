@@ -25,12 +25,14 @@ export default function FeeSettings() {
     dispatchRadiusExpansionEnabled: true,
     dispatchRadiusTiers: "2, 4, 6, 8, 15",
     deliveryTipEnabled: false,
-    deliveryTipAmount: "",
+    deliveryTipAmounts: [],
+    deliveryTipDefaultAmount: null,
   })
   const [loadingFeeSettings, setLoadingFeeSettings] = useState(false)
   const [savingFeeSettings, setSavingFeeSettings] = useState(false)
   const [editingRangeIndex, setEditingRangeIndex] = useState(null)
   const [newRange, setNewRange] = useState({ min: '', max: '', fee: '' })
+  const [newTipAmount, setNewTipAmount] = useState("")
 
   // Fetch fee settings
   const fetchFeeSettings = async () => {
@@ -53,7 +55,8 @@ export default function FeeSettings() {
           dispatchRadiusExpansionEnabled: response.data.data.feeSettings.dispatchRadiusExpansionEnabled !== false,
           dispatchRadiusTiers: response.data.data.feeSettings.dispatchRadiusTiers?.join(", ") ?? "2, 4, 6, 8, 15",
           deliveryTipEnabled: response.data.data.feeSettings.deliveryTipEnabled === true,
-          deliveryTipAmount: response.data.data.feeSettings.deliveryTipAmount ?? "",
+          deliveryTipAmounts: (response.data.data.feeSettings.deliveryTipAmounts || []).map(Number).sort((a, b) => a - b),
+          deliveryTipDefaultAmount: response.data.data.feeSettings.deliveryTipDefaultAmount ?? null,
         })
       } else if (response.data.success && response.data.data.feeSettings === null) {
         // Not configured yet - keep empty fields (no defaults).
@@ -72,7 +75,8 @@ export default function FeeSettings() {
           dispatchRadiusExpansionEnabled: true,
           dispatchRadiusTiers: "2, 4, 6, 8, 15",
           deliveryTipEnabled: false,
-          deliveryTipAmount: "",
+          deliveryTipAmounts: [],
+          deliveryTipDefaultAmount: null,
         })
       }
     } catch (error) {
@@ -88,8 +92,44 @@ export default function FeeSettings() {
     fetchFeeSettings()
   }, [])
 
+  const addTipAmount = () => {
+    const n = Number(newTipAmount)
+    if (!Number.isInteger(n) || n < 1 || n > 500) {
+      toast.error("Enter a whole amount between 1 and 500")
+      return
+    }
+    if (feeSettings.deliveryTipAmounts.includes(n)) {
+      toast.error(`₹${n} is already added`)
+      return
+    }
+    if (feeSettings.deliveryTipAmounts.length >= 10) {
+      toast.error("You can add up to 10 amounts")
+      return
+    }
+    const amounts = [...feeSettings.deliveryTipAmounts, n].sort((a, b) => a - b)
+    setFeeSettings({
+      ...feeSettings,
+      deliveryTipAmounts: amounts,
+      deliveryTipDefaultAmount: feeSettings.deliveryTipDefaultAmount ?? n,
+    })
+    setNewTipAmount("")
+  }
+
+  const removeTipAmount = (n) => {
+    const amounts = feeSettings.deliveryTipAmounts.filter((a) => a !== n)
+    setFeeSettings({
+      ...feeSettings,
+      deliveryTipAmounts: amounts,
+      deliveryTipDefaultAmount: feeSettings.deliveryTipDefaultAmount === n ? (amounts[0] ?? null) : feeSettings.deliveryTipDefaultAmount,
+    })
+  }
+
   // Save fee settings
   const handleSaveFeeSettings = async () => {
+    if (feeSettings.deliveryTipEnabled && feeSettings.deliveryTipAmounts.length === 0) {
+      toast.error("Add at least one tip amount to enable delivery tips")
+      return
+    }
     try {
       setSavingFeeSettings(true)
       const response = await adminAPI.createOrUpdateFeeSettings({
@@ -107,7 +147,8 @@ export default function FeeSettings() {
         dispatchRadiusExpansionEnabled: Boolean(feeSettings.dispatchRadiusExpansionEnabled),
         dispatchRadiusTiers: feeSettings.dispatchRadiusTiers ? feeSettings.dispatchRadiusTiers.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)) : undefined,
         deliveryTipEnabled: Boolean(feeSettings.deliveryTipEnabled),
-        deliveryTipAmount: feeSettings.deliveryTipAmount === "" ? undefined : Number(feeSettings.deliveryTipAmount),
+        deliveryTipAmounts: feeSettings.deliveryTipAmounts,
+        deliveryTipDefaultAmount: feeSettings.deliveryTipDefaultAmount ?? undefined,
         isActive: true,
       })
 
@@ -131,7 +172,8 @@ export default function FeeSettings() {
             dispatchRadiusExpansionEnabled: saved.dispatchRadiusExpansionEnabled !== false,
             dispatchRadiusTiers: saved.dispatchRadiusTiers?.join(", ") ?? "2, 4, 6, 8, 15",
             deliveryTipEnabled: saved.deliveryTipEnabled === true,
-            deliveryTipAmount: saved.deliveryTipAmount ?? "",
+            deliveryTipAmounts: (saved.deliveryTipAmounts || []).map(Number).sort((a, b) => a - b),
+            deliveryTipDefaultAmount: saved.deliveryTipDefaultAmount ?? null,
           })
         }
       } else {
@@ -638,45 +680,90 @@ export default function FeeSettings() {
                   </p>
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="space-y-3 md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700">
                         Delivery Partner Tip (Mandatory)
                       </label>
                       <p className="text-xs text-slate-500 mt-1">
-                        When enabled, this fixed amount is added to every order and cannot be skipped by the customer. 100% goes to the delivery partner.
+                        When enabled, the customer must pick one of these amounts at checkout (the default below is pre-selected). 100% goes to the delivery partner.
                       </p>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <input
-                        type="number"
-                        value={feeSettings.deliveryTipAmount}
-                        onChange={(e) => setFeeSettings({ ...feeSettings, deliveryTipAmount: e.target.value })}
-                        min="0"
-                        max="500"
-                        step="1"
-                        disabled={!feeSettings.deliveryTipEnabled}
-                        className="w-24 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all disabled:bg-slate-100 disabled:text-slate-400"
-                        placeholder="20"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setFeeSettings({
-                          ...feeSettings,
-                          deliveryTipEnabled: !feeSettings.deliveryTipEnabled,
-                        })}
-                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
-                          feeSettings.deliveryTipEnabled ? "bg-green-600" : "bg-slate-300"
+                    <button
+                      type="button"
+                      onClick={() => setFeeSettings({
+                        ...feeSettings,
+                        deliveryTipEnabled: !feeSettings.deliveryTipEnabled,
+                      })}
+                      className={`relative inline-flex h-7 w-14 flex-shrink-0 items-center rounded-full transition-colors ${
+                        feeSettings.deliveryTipEnabled ? "bg-green-600" : "bg-slate-300"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                          feeSettings.deliveryTipEnabled ? "translate-x-8" : "translate-x-1"
                         }`}
-                      >
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {feeSettings.deliveryTipAmounts.length === 0 && (
+                      <span className="text-sm text-slate-400">No amounts added yet.</span>
+                    )}
+                    {feeSettings.deliveryTipAmounts.map((a) => {
+                      const isDefault = feeSettings.deliveryTipDefaultAmount === a
+                      return (
                         <span
-                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                            feeSettings.deliveryTipEnabled ? "translate-x-8" : "translate-x-1"
+                          key={a}
+                          className={`inline-flex items-center gap-1 rounded-full text-sm font-medium pl-3 pr-1.5 py-1 ${
+                            isDefault ? "bg-green-600 text-white" : "bg-green-50 text-green-700"
                           }`}
-                        />
-                      </button>
-                    </div>
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setFeeSettings({ ...feeSettings, deliveryTipDefaultAmount: a })}
+                            title="Set as default"
+                          >
+                            ₹{a}{isDefault ? " (default)" : ""}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeTipAmount(a)}
+                            className={`rounded-full p-0.5 ${isDefault ? "hover:bg-green-700" : "hover:bg-green-100"}`}
+                            aria-label={`Remove ₹${a}`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="500"
+                      step="1"
+                      value={newTipAmount}
+                      onChange={(e) => setNewTipAmount(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          addTipAmount()
+                        }
+                      }}
+                      placeholder="e.g. 20"
+                      className="w-32 border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={addTipAmount}
+                      className="flex items-center gap-1 border border-slate-300 rounded-lg px-3 py-2 text-sm hover:bg-white"
+                    >
+                      <Plus className="h-4 w-4" /> Add amount
+                    </button>
                   </div>
                 </div>
 

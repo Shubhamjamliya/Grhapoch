@@ -15,9 +15,11 @@ const feeSettingsUpsertSchema = z.object({
     platformFee: z.number().min(0).nullable().optional(),
     packagingFee: z.number().min(0).nullable().optional(),
     donationEnabled: z.boolean().optional(),
-    donationAmount: z.number().min(0).max(1000).nullable().optional(),
+    donationAmounts: z.array(z.number().int().min(1).max(1000)).max(10).optional(),
+    donationDefaultAmount: z.number().min(0).max(1000).nullable().optional(),
     deliveryTipEnabled: z.boolean().optional(),
-    deliveryTipAmount: z.number().min(0).max(500).nullable().optional(),
+    deliveryTipAmounts: z.array(z.number().int().min(1).max(500)).max(10).optional(),
+    deliveryTipDefaultAmount: z.number().min(0).max(500).nullable().optional(),
     gstRate: z.number().min(0).max(100).nullable().optional(),
     gstOnDeliveryFee: z.number().min(0).max(100).nullable().optional(),
     gstOnPlatformFee: z.number().min(0).max(100).nullable().optional(),
@@ -60,11 +62,13 @@ export const validateFeeSettingsUpsertDto = (body) => {
         packagingFee:
             body?.packagingFee === null ? null : body?.packagingFee !== undefined ? Number(body.packagingFee) : undefined,
         donationEnabled: body?.donationEnabled !== undefined ? Boolean(body.donationEnabled) : undefined,
-        donationAmount:
-            body?.donationAmount === null ? null : body?.donationAmount !== undefined ? Number(body.donationAmount) : undefined,
+        donationAmounts: Array.isArray(body?.donationAmounts) ? body.donationAmounts.map((v) => Number(v)) : undefined,
+        donationDefaultAmount:
+            body?.donationDefaultAmount === null ? null : body?.donationDefaultAmount !== undefined ? Number(body.donationDefaultAmount) : undefined,
         deliveryTipEnabled: body?.deliveryTipEnabled !== undefined ? Boolean(body.deliveryTipEnabled) : undefined,
-        deliveryTipAmount:
-            body?.deliveryTipAmount === null ? null : body?.deliveryTipAmount !== undefined ? Number(body.deliveryTipAmount) : undefined,
+        deliveryTipAmounts: Array.isArray(body?.deliveryTipAmounts) ? body.deliveryTipAmounts.map((v) => Number(v)) : undefined,
+        deliveryTipDefaultAmount:
+            body?.deliveryTipDefaultAmount === null ? null : body?.deliveryTipDefaultAmount !== undefined ? Number(body.deliveryTipDefaultAmount) : undefined,
         gstRate:
             body?.gstRate === null ? null : body?.gstRate !== undefined ? Number(body.gstRate) : undefined,
         gstOnDeliveryFee:
@@ -103,6 +107,22 @@ export const validateFeeSettingsUpsertDto = (body) => {
             }
         }
         result.data.deliveryFeeRanges = sorted;
+    }
+
+    if (
+        Array.isArray(result.data.donationAmounts) &&
+        result.data.donationDefaultAmount != null &&
+        !result.data.donationAmounts.includes(result.data.donationDefaultAmount)
+    ) {
+        throw new ValidationError('Default donation amount must be one of the donation presets');
+    }
+
+    if (
+        Array.isArray(result.data.deliveryTipAmounts) &&
+        result.data.deliveryTipDefaultAmount != null &&
+        !result.data.deliveryTipAmounts.includes(result.data.deliveryTipDefaultAmount)
+    ) {
+        throw new ValidationError('Default delivery tip amount must be one of the delivery tip presets');
     }
 
     return result.data;

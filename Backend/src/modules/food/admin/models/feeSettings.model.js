@@ -18,12 +18,15 @@ const feeSettingsSchema = new mongoose.Schema(
         freeDeliveryThreshold: { type: Number, min: 0 },
         platformFee: { type: Number, min: 0 },
         packagingFee: { type: Number, min: 0 },
-        // Donation is a fixed, mandatory charge set by admin — not a customer choice.
+        // Donation: admin-configured preset amounts. Customer picks one; selecting none is not
+        // allowed — a default preset is always pre-selected and charged.
         donationEnabled: { type: Boolean, default: false },
-        donationAmount: { type: Number, min: 0, max: 1000 },
-        // Delivery tip is a fixed, mandatory charge set by admin — not a customer choice.
+        donationAmounts: { type: [Number], default: [] },
+        donationDefaultAmount: { type: Number, min: 0, max: 1000 },
+        // Delivery tip: admin-configured preset amounts. Same mandatory-selection rule as donation.
         deliveryTipEnabled: { type: Boolean, default: false },
-        deliveryTipAmount: { type: Number, min: 0, max: 500 },
+        deliveryTipAmounts: { type: [Number], default: [] },
+        deliveryTipDefaultAmount: { type: Number, min: 0, max: 500 },
         gstRate: { type: Number, min: 0, max: 100 },
         gstOnDeliveryFee: { type: Number, min: 0, max: 100, default: 0 },
         gstOnPlatformFee: { type: Number, min: 0, max: 100, default: 0 },

@@ -87,16 +87,33 @@ export const isFeatureEnabled = (key, fallback = true) => {
   return fallback;
 };
 
-/** Fixed, mandatory donation amount set by admin (0 when donations are off). */
-export const getDonationAmount = (feeSettings = store.feeSettings) => {
-  if (!feeSettings || feeSettings.donationEnabled !== true) return 0;
-  const n = Math.floor(Number(feeSettings.donationAmount));
-  return Number.isFinite(n) && n > 0 && n <= 1000 ? n : 0;
-};
+const toOptionList = (values, max) =>
+  [...new Set((Array.isArray(values) ? values : []).map((v) => Math.floor(Number(v))).filter((n) => Number.isFinite(n) && n > 0 && n <= max))].sort((a, b) => a - b)
 
-/** Fixed, mandatory delivery tip amount set by admin (0 when tips are off). */
-export const getDeliveryTipAmount = (feeSettings = store.feeSettings) => {
-  if (!feeSettings || feeSettings.deliveryTipEnabled !== true) return 0;
-  const n = Math.floor(Number(feeSettings.deliveryTipAmount));
-  return Number.isFinite(n) && n > 0 && n <= 500 ? n : 0;
-};
+/** Donation preset amounts the customer may pick from at checkout (empty when donations are off). */
+export const getDonationOptions = (feeSettings = store.feeSettings) => {
+  if (!feeSettings || feeSettings.donationEnabled !== true) return []
+  return toOptionList(feeSettings.donationAmounts, 1000)
+}
+
+/** The donation preset that is pre-selected / charged by default. One is always selected once enabled. */
+export const getDonationDefaultAmount = (feeSettings = store.feeSettings) => {
+  const options = getDonationOptions(feeSettings)
+  if (options.length === 0) return 0
+  const def = Math.floor(Number(feeSettings?.donationDefaultAmount))
+  return options.includes(def) ? def : options[0]
+}
+
+/** Delivery tip preset amounts the customer may pick from at checkout (empty when tips are off). */
+export const getTipOptions = (feeSettings = store.feeSettings) => {
+  if (!feeSettings || feeSettings.deliveryTipEnabled !== true) return []
+  return toOptionList(feeSettings.deliveryTipAmounts, 500)
+}
+
+/** The tip preset that is pre-selected / charged by default. One is always selected once enabled. */
+export const getTipDefaultAmount = (feeSettings = store.feeSettings) => {
+  const options = getTipOptions(feeSettings)
+  if (options.length === 0) return 0
+  const def = Math.floor(Number(feeSettings?.deliveryTipDefaultAmount))
+  return options.includes(def) ? def : options[0]
+}
