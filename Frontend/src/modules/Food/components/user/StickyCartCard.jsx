@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 export default function StickyCartCard() {
   const { cart, getCartCount, clearCart } = useCart()
   const [isVisible, setIsVisible] = useState(true)
-  const [bottomPosition, setBottomPosition] = useState("bottom-[70px]") // Fixed above bottom navigation
+  const [bottomPosition, setBottomPosition] = useState("bottom-[100px]") // Fixed above bottom navigation
   const cartCount = getCartCount()
 
   // Set fixed position above bottom navigation (no scroll-based movement)
@@ -17,7 +17,7 @@ export default function StickyCartCard() {
       if (window.innerWidth >= 768) {
         setBottomPosition("bottom-6") // Desktop: fixed position
       } else {
-        setBottomPosition("bottom-[70px]") // Mobile: above bottom nav (fixed, doesn't move with scroll)
+        setBottomPosition("bottom-[100px]") // Mobile: above bottom nav (fixed, doesn't move with scroll)
       }
     }
 
@@ -27,7 +27,7 @@ export default function StickyCartCard() {
       if (window.innerWidth >= 768) {
         setBottomPosition("bottom-6") // Desktop: always fixed
       } else {
-        setBottomPosition("bottom-[70px]") // Mobile: above bottom nav (fixed)
+        setBottomPosition("bottom-[100px]") // Mobile: above bottom nav (fixed)
       }
     }
 
@@ -87,7 +87,7 @@ export default function StickyCartCard() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className={`fixed ${bottomPosition} md:bottom-8 right-4 md:right-6 z-50 flex justify-end pointer-events-none`}
+          className={`fixed ${bottomPosition} md:bottom-8 right-4 md:right-6 z-[60] flex justify-end pointer-events-none`}
           initial="initial"
           animate="animate"
           exit="exit"
@@ -107,4 +107,3 @@ export default function StickyCartCard() {
     </AnimatePresence>
   )
 }
-

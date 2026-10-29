@@ -9,7 +9,7 @@ import { FoodZone } from '../../admin/models/zone.model.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
 import { logger } from '../../../../utils/logger.js';
 import { verifyOrderCartPrices } from '../helpers/order-cart-items.helper.js';
-import { normalizeTipAmount } from '../helpers/tip.helper.js';
+import { resolveTipAmount } from '../helpers/tip.helper.js';
 import { resolveDonationAmount } from '../helpers/donation.helper.js';
 import { haversineKm } from './order.helpers.js';
 import { getDrivingDistances } from '../../../../services/googleMaps.service.js';
@@ -335,10 +335,10 @@ export async function calculateOrderPricing(userId, dto) {
 
   const couponDiscount = discount;
   const totalDiscount = couponDiscount;
-  // Tip is untaxed and passes 100% to the rider. Whole rupees, capped.
-  const tip = normalizeTipAmount(dto.tip);
-  // Donation is opt-in, untaxed, and goes to the platform. Must be one of the admin-configured presets.
-  const donation = resolveDonationAmount(feeSettings, dto.donation);
+  // Tip is untaxed and passes 100% to the rider. Fixed, mandatory amount set by admin.
+  const tip = resolveTipAmount(feeSettings);
+  // Donation is untaxed and goes to the platform. Fixed, mandatory amount set by admin.
+  const donation = resolveDonationAmount(feeSettings);
   const totalBeforeDiscount = subtotal + deliveryFee + tax + platformFee + packagingFee + tip + donation;
   const total = Math.max(0, totalBeforeDiscount - totalDiscount);
 

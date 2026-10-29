@@ -24,6 +24,8 @@ export default function FeeSettings() {
     deliveryBonusAmount: "",
     dispatchRadiusExpansionEnabled: true,
     dispatchRadiusTiers: "2, 4, 6, 8, 15",
+    deliveryTipEnabled: false,
+    deliveryTipAmount: "",
   })
   const [loadingFeeSettings, setLoadingFeeSettings] = useState(false)
   const [savingFeeSettings, setSavingFeeSettings] = useState(false)
@@ -50,6 +52,8 @@ export default function FeeSettings() {
           deliveryBonusAmount: response.data.data.feeSettings.deliveryBonusAmount ?? "",
           dispatchRadiusExpansionEnabled: response.data.data.feeSettings.dispatchRadiusExpansionEnabled !== false,
           dispatchRadiusTiers: response.data.data.feeSettings.dispatchRadiusTiers?.join(", ") ?? "2, 4, 6, 8, 15",
+          deliveryTipEnabled: response.data.data.feeSettings.deliveryTipEnabled === true,
+          deliveryTipAmount: response.data.data.feeSettings.deliveryTipAmount ?? "",
         })
       } else if (response.data.success && response.data.data.feeSettings === null) {
         // Not configured yet - keep empty fields (no defaults).
@@ -67,6 +71,8 @@ export default function FeeSettings() {
           deliveryBonusAmount: "",
           dispatchRadiusExpansionEnabled: true,
           dispatchRadiusTiers: "2, 4, 6, 8, 15",
+          deliveryTipEnabled: false,
+          deliveryTipAmount: "",
         })
       }
     } catch (error) {
@@ -100,6 +106,8 @@ export default function FeeSettings() {
         deliveryBonusAmount: feeSettings.deliveryBonusAmount === "" ? undefined : Number(feeSettings.deliveryBonusAmount),
         dispatchRadiusExpansionEnabled: Boolean(feeSettings.dispatchRadiusExpansionEnabled),
         dispatchRadiusTiers: feeSettings.dispatchRadiusTiers ? feeSettings.dispatchRadiusTiers.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)) : undefined,
+        deliveryTipEnabled: Boolean(feeSettings.deliveryTipEnabled),
+        deliveryTipAmount: feeSettings.deliveryTipAmount === "" ? undefined : Number(feeSettings.deliveryTipAmount),
         isActive: true,
       })
 
@@ -122,6 +130,8 @@ export default function FeeSettings() {
             deliveryBonusAmount: saved.deliveryBonusAmount ?? "",
             dispatchRadiusExpansionEnabled: saved.dispatchRadiusExpansionEnabled !== false,
             dispatchRadiusTiers: saved.dispatchRadiusTiers?.join(", ") ?? "2, 4, 6, 8, 15",
+            deliveryTipEnabled: saved.deliveryTipEnabled === true,
+            deliveryTipAmount: saved.deliveryTipAmount ?? "",
           })
         }
       } else {
@@ -626,6 +636,48 @@ export default function FeeSettings() {
                   <p className="text-xs text-slate-500">
                     Fixed bonus added to rider earnings per order
                   </p>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700">
+                        Delivery Partner Tip (Mandatory)
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">
+                        When enabled, this fixed amount is added to every order and cannot be skipped by the customer. 100% goes to the delivery partner.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <input
+                        type="number"
+                        value={feeSettings.deliveryTipAmount}
+                        onChange={(e) => setFeeSettings({ ...feeSettings, deliveryTipAmount: e.target.value })}
+                        min="0"
+                        max="500"
+                        step="1"
+                        disabled={!feeSettings.deliveryTipEnabled}
+                        className="w-24 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all disabled:bg-slate-100 disabled:text-slate-400"
+                        placeholder="20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFeeSettings({
+                          ...feeSettings,
+                          deliveryTipEnabled: !feeSettings.deliveryTipEnabled,
+                        })}
+                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
+                          feeSettings.deliveryTipEnabled ? "bg-green-600" : "bg-slate-300"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                            feeSettings.deliveryTipEnabled ? "translate-x-8" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2 md:col-span-2">

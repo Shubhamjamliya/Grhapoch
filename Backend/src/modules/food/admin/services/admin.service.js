@@ -2061,12 +2061,12 @@ export async function upsertFeeSettings(body) {
         else if (body.gstRate !== undefined) $set.gstRate = body.gstRate;
 
         if (body.donationEnabled !== undefined) $set.donationEnabled = body.donationEnabled;
-        if (body.donationAmounts !== undefined) {
-            $set.donationAmounts = body.donationAmounts;
-            // Presets supersede the legacy single amount.
-            $unset.donationAmount = 1;
-        } else if (body.donationAmount === null) $unset.donationAmount = 1;
+        if (body.donationAmount === null) $unset.donationAmount = 1;
         else if (body.donationAmount !== undefined) $set.donationAmount = body.donationAmount;
+
+        if (body.deliveryTipEnabled !== undefined) $set.deliveryTipEnabled = body.deliveryTipEnabled;
+        if (body.deliveryTipAmount === null) $unset.deliveryTipAmount = 1;
+        else if (body.deliveryTipAmount !== undefined) $set.deliveryTipAmount = body.deliveryTipAmount;
 
         if (body.gstOnDeliveryFee === null) $unset.gstOnDeliveryFee = 1;
         else if (body.gstOnDeliveryFee !== undefined) $set.gstOnDeliveryFee = body.gstOnDeliveryFee;
@@ -2108,7 +2108,8 @@ export async function upsertFeeSettings(body) {
     if (body.gstRate !== undefined && body.gstRate !== null) payload.gstRate = body.gstRate;
     if (body.donationEnabled !== undefined) payload.donationEnabled = body.donationEnabled;
     if (body.donationAmount !== undefined && body.donationAmount !== null) payload.donationAmount = body.donationAmount;
-    if (body.donationAmounts !== undefined) payload.donationAmounts = body.donationAmounts;
+    if (body.deliveryTipEnabled !== undefined) payload.deliveryTipEnabled = body.deliveryTipEnabled;
+    if (body.deliveryTipAmount !== undefined && body.deliveryTipAmount !== null) payload.deliveryTipAmount = body.deliveryTipAmount;
     if (body.gstOnDeliveryFee !== undefined && body.gstOnDeliveryFee !== null) payload.gstOnDeliveryFee = body.gstOnDeliveryFee;
     if (body.gstOnPlatformFee !== undefined && body.gstOnPlatformFee !== null) payload.gstOnPlatformFee = body.gstOnPlatformFee;
     if (body.gstOnPackagingFee !== undefined && body.gstOnPackagingFee !== null) payload.gstOnPackagingFee = body.gstOnPackagingFee;

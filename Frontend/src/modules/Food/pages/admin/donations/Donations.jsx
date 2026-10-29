@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { Loader2, Search, ChevronLeft, ChevronRight, HeartHandshake, Plus, X } from "lucide-react"
+import { Loader2, Search, ChevronLeft, ChevronRight, HeartHandshake } from "lucide-react"
 import { adminAPI } from "@food/api"
 import { toast } from "sonner"
 
@@ -51,8 +51,7 @@ export default function Donations() {
   const [search, setSearch] = useState("")
 
   const [donationEnabled, setDonationEnabled] = useState(false)
-  const [donationAmounts, setDonationAmounts] = useState([])
-  const [newAmount, setNewAmount] = useState("")
+  const [donationAmount, setDonationAmount] = useState("")
   const [settingsLoading, setSettingsLoading] = useState(true)
   const [savingSettings, setSavingSettings] = useState(false)
 
@@ -64,13 +63,7 @@ export default function Donations() {
         const fs = res?.data?.data?.feeSettings
         if (cancelled || !fs) return
         setDonationEnabled(fs.donationEnabled === true)
-        const list =
-          Array.isArray(fs.donationAmounts) && fs.donationAmounts.length > 0
-            ? fs.donationAmounts
-            : fs.donationAmount > 0
-              ? [fs.donationAmount]
-              : []
-        setDonationAmounts(list.map(Number).sort((a, b) => a - b))
+        setDonationAmount(fs.donationAmount > 0 ? String(fs.donationAmount) : "")
       })
       .catch(() => toast.error("Failed to load donation settings"))
       .finally(() => !cancelled && setSettingsLoading(false))
@@ -79,34 +72,18 @@ export default function Donations() {
     }
   }, [])
 
-  const addAmount = () => {
-    const n = Number(newAmount)
-    if (!Number.isInteger(n) || n < 1 || n > 1000) {
-      toast.error("Enter a whole amount between 1 and 1000")
-      return
-    }
-    if (donationAmounts.includes(n)) {
-      toast.error(`₹${n} is already added`)
-      return
-    }
-    if (donationAmounts.length >= 10) {
-      toast.error("You can add up to 10 amounts")
-      return
-    }
-    setDonationAmounts([...donationAmounts, n].sort((a, b) => a - b))
-    setNewAmount("")
-  }
-
-  const removeAmount = (n) => setDonationAmounts(donationAmounts.filter((a) => a !== n))
-
   const saveSettings = async () => {
-    if (donationEnabled && donationAmounts.length === 0) {
-      toast.error("Add at least one donation amount to enable donations")
+    const n = Number(donationAmount)
+    if (donationEnabled && (!Number.isInteger(n) || n < 1 || n > 1000)) {
+      toast.error("Enter a whole donation amount between 1 and 1000 to enable donations")
       return
     }
     try {
       setSavingSettings(true)
-      const res = await adminAPI.createOrUpdateFeeSettings({ donationEnabled, donationAmounts })
+      const res = await adminAPI.createOrUpdateFeeSettings({
+        donationEnabled,
+        donationAmount: donationEnabled ? n : null,
+      })
       if (res?.data?.success) {
         toast.success("Donation settings saved")
         window.dispatchEvent(new CustomEvent("businessSettingsUpdated"))
@@ -193,53 +170,17 @@ export default function Donations() {
             </div>
 
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Donation amounts (₹)</label>
-              <div className="flex flex-wrap items-center gap-2">
-                {donationAmounts.length === 0 && (
-                  <span className="text-sm text-slate-400">No amounts added yet.</span>
-                )}
-                {donationAmounts.map((a) => (
-                  <span
-                    key={a}
-                    className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium pl-3 pr-1.5 py-1"
-                  >
-                    ₹{a}
-                    <button
-                      type="button"
-                      onClick={() => removeAmount(a)}
-                      className="rounded-full p-0.5 hover:bg-emerald-100"
-                      aria-label={`Remove ₹${a}`}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 mt-3">
-                <input
-                  type="number"
-                  min="1"
-                  max="1000"
-                  step="1"
-                  value={newAmount}
-                  onChange={(e) => setNewAmount(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault()
-                      addAmount()
-                    }
-                  }}
-                  placeholder="e.g. 10"
-                  className="w-32 border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={addAmount}
-                  className="flex items-center gap-1 border border-slate-300 rounded-lg px-3 py-2 text-sm hover:bg-slate-50"
-                >
-                  <Plus className="h-4 w-4" /> Add amount
-                </button>
-              </div>
+              <label className="block text-xs text-slate-500 mb-1">Donation amount (₹)</label>
+              <input
+                type="number"
+                min="1"
+                max="1000"
+                step="1"
+                value={donationAmount}
+                onChange={(e) => setDonationAmount(e.target.value)}
+                placeholder="e.g. 10"
+                className="w-32 border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              />
             </div>
 
             <button
@@ -253,7 +194,7 @@ export default function Donations() {
           </div>
         )}
         <p className="text-xs text-slate-500 mt-3">
-          Customers can pick one of these amounts in the cart (up to 10, whole rupees). The full amount goes to the platform.
+          This amount is added to every order automatically and cannot be skipped by the customer. The full amount goes to the platform.
         </p>
       </div>
 

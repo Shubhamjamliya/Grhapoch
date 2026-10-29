@@ -87,11 +87,16 @@ export const isFeatureEnabled = (key, fallback = true) => {
   return fallback;
 };
 
-/** Donation preset amounts the customer may pick at checkout (empty when donations are off). */
-export const getDonationOptions = (feeSettings = store.feeSettings) => {
-  if (!feeSettings || feeSettings.donationEnabled !== true) return [];
-  const toList = (values) =>
-    [...new Set((Array.isArray(values) ? values : []).map((v) => Math.floor(Number(v))).filter((n) => Number.isFinite(n) && n > 0 && n <= 1000))].sort((a, b) => a - b);
-  const presets = toList(feeSettings.donationAmounts);
-  return presets.length > 0 ? presets : toList([feeSettings.donationAmount]);
+/** Fixed, mandatory donation amount set by admin (0 when donations are off). */
+export const getDonationAmount = (feeSettings = store.feeSettings) => {
+  if (!feeSettings || feeSettings.donationEnabled !== true) return 0;
+  const n = Math.floor(Number(feeSettings.donationAmount));
+  return Number.isFinite(n) && n > 0 && n <= 1000 ? n : 0;
+};
+
+/** Fixed, mandatory delivery tip amount set by admin (0 when tips are off). */
+export const getDeliveryTipAmount = (feeSettings = store.feeSettings) => {
+  if (!feeSettings || feeSettings.deliveryTipEnabled !== true) return 0;
+  const n = Math.floor(Number(feeSettings.deliveryTipAmount));
+  return Number.isFinite(n) && n > 0 && n <= 500 ? n : 0;
 };

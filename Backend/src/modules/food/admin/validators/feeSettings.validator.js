@@ -16,7 +16,8 @@ const feeSettingsUpsertSchema = z.object({
     packagingFee: z.number().min(0).nullable().optional(),
     donationEnabled: z.boolean().optional(),
     donationAmount: z.number().min(0).max(1000).nullable().optional(),
-    donationAmounts: z.array(z.number().int().min(1).max(1000)).max(10).optional(),
+    deliveryTipEnabled: z.boolean().optional(),
+    deliveryTipAmount: z.number().min(0).max(500).nullable().optional(),
     gstRate: z.number().min(0).max(100).nullable().optional(),
     gstOnDeliveryFee: z.number().min(0).max(100).nullable().optional(),
     gstOnPlatformFee: z.number().min(0).max(100).nullable().optional(),
@@ -59,9 +60,11 @@ export const validateFeeSettingsUpsertDto = (body) => {
         packagingFee:
             body?.packagingFee === null ? null : body?.packagingFee !== undefined ? Number(body.packagingFee) : undefined,
         donationEnabled: body?.donationEnabled !== undefined ? Boolean(body.donationEnabled) : undefined,
-        donationAmounts: Array.isArray(body?.donationAmounts) ? body.donationAmounts.map((v) => Number(v)) : undefined,
         donationAmount:
             body?.donationAmount === null ? null : body?.donationAmount !== undefined ? Number(body.donationAmount) : undefined,
+        deliveryTipEnabled: body?.deliveryTipEnabled !== undefined ? Boolean(body.deliveryTipEnabled) : undefined,
+        deliveryTipAmount:
+            body?.deliveryTipAmount === null ? null : body?.deliveryTipAmount !== undefined ? Number(body.deliveryTipAmount) : undefined,
         gstRate:
             body?.gstRate === null ? null : body?.gstRate !== undefined ? Number(body.gstRate) : undefined,
         gstOnDeliveryFee:

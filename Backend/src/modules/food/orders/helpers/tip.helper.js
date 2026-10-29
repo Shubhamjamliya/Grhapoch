@@ -1,11 +1,12 @@
 export const MAX_TIP_AMOUNT = 500;
 
 /**
- * Normalizes a customer-supplied tip: whole rupees, clamped to [0, MAX_TIP_AMOUNT].
- * Anything non-numeric, negative or non-finite becomes 0.
+ * Delivery tip is a fixed, mandatory charge set by admin — not a customer choice.
+ * Returns 0 when disabled.
  */
-export function normalizeTipAmount(value) {
-  const n = Math.floor(Number(value));
+export function resolveTipAmount(feeSettings = {}) {
+  if (feeSettings?.deliveryTipEnabled !== true) return 0;
+  const n = Math.floor(Number(feeSettings.deliveryTipAmount));
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.min(n, MAX_TIP_AMOUNT);
 }

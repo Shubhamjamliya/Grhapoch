@@ -7,7 +7,7 @@ import { FoodRestaurant } from '../../restaurant/models/restaurant.model.js';
 import { FoodDeliveryPartner } from '../../delivery/models/deliveryPartner.model.js';
 import { FoodZone } from '../../admin/models/zone.model.js';
 import { FoodFeeSettings } from '../../admin/models/feeSettings.model.js';
-import { normalizeTipAmount } from '../helpers/tip.helper.js';
+import { resolveTipAmount } from '../helpers/tip.helper.js';
 import { resolveDonationAmount } from '../helpers/donation.helper.js';
 import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
 import { ValidationError, ForbiddenError, NotFoundError } from '../../../../core/auth/errors.js';
@@ -227,8 +227,8 @@ export async function createOrder(userId, dto) {
     packagingFee: Number(dto.pricing?.packagingFee ?? 0),
     deliveryFee: Number(dto.pricing?.deliveryFee ?? 0),
     platformFee: Number(dto.pricing?.platformFee ?? 0),
-    tip: normalizeTipAmount(dto.pricing?.tip),
-    donation: resolveDonationAmount(activeFeeSettings, dto.pricing?.donation),
+    tip: resolveTipAmount(activeFeeSettings),
+    donation: resolveDonationAmount(activeFeeSettings),
     discount: Number(dto.pricing?.discount ?? 0),
     total: Number(dto.pricing?.total ?? 0),
     currency: String(dto.pricing?.currency || "INR"),

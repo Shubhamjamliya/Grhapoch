@@ -17,7 +17,7 @@ import { API_BASE_URL } from "@food/api/config"
 import { initRazorpayPayment } from "@food/utils/razorpay"
 import { toast } from "sonner"
 import { getCompanyNameAsync } from "@food/utils/businessSettings"
-import { getDonationOptions } from "@food/services/publicAppConfig"
+import { getDonationAmount, getDeliveryTipAmount } from "@food/services/publicAppConfig"
 import { calculateDistance } from "@food/utils/common"
 import { useCompanyName } from "@food/hooks/useCompanyName"
 import { getRestaurantAvailabilityStatus } from "@food/utils/restaurantAvailability"
@@ -123,11 +123,6 @@ export default function Cart() {
   const [showCoupons, setShowCoupons] = useState(false)
   const [appliedCoupon, setAppliedCoupon] = useState(null)
   const [couponCode, setCouponCode] = useState("")
-  // Optional tip for the delivery partner and optional donation (preset amounts from admin fee settings)
-  const [tipAmount, setTipAmount] = useState(0)
-  const [donationChoice, setDonationChoice] = useState(0)
-  const [customTipInput, setCustomTipInput] = useState("")
-  const [showCustomTip, setShowCustomTip] = useState(false)
   const [manualCouponCode, setManualCouponCode] = useState("")
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cash")
   const [showPaymentSheet, setShowPaymentSheet] = useState(false)
@@ -274,7 +269,9 @@ export default function Cart() {
     packagingFee: 0,
     gstRate: 0,
     donationEnabled: false,
-    donationOptions: [],
+    donationAmount: 0,
+    deliveryTipEnabled: false,
+    deliveryTipAmount: 0,
   })
 
 
@@ -927,8 +924,6 @@ export default function Cart() {
           restaurantId: resolvedRestaurantId,
           deliveryAddress: defaultAddress,
           couponCode: resolvedCouponCode,
-          tip: tipAmount,
-          donation: donationChoice
         })
 
         if (response?.data?.success && response?.data?.data?.pricing) {
@@ -964,14 +959,7 @@ export default function Cart() {
     }
 
     calculatePricing()
-  }, [cart, defaultAddress, appliedCoupon, couponCode, restaurantId, tipAmount, donationChoice])
-
-  // Drop a selected donation if the admin removed that preset.
-  useEffect(() => {
-    if (donationChoice > 0 && !feeSettings.donationOptions?.includes(donationChoice)) {
-      setDonationChoice(0)
-    }
-  }, [feeSettings.donationOptions, donationChoice])
+  }, [cart, defaultAddress, appliedCoupon, couponCode, restaurantId])
 
   // Fetch wallet balance
   useEffect(() => {
@@ -1028,7 +1016,9 @@ export default function Cart() {
             gstOnPlatformFee: response.data.data.feeSettings.gstOnPlatformFee ?? 0,
             gstOnPackagingFee: response.data.data.feeSettings.gstOnPackagingFee ?? 0,
             donationEnabled: response.data.data.feeSettings.donationEnabled === true,
-            donationOptions: getDonationOptions(response.data.data.feeSettings),
+            donationAmount: getDonationAmount(response.data.data.feeSettings),
+            deliveryTipEnabled: response.data.data.feeSettings.deliveryTipEnabled === true,
+            deliveryTipAmount: getDeliveryTipAmount(response.data.data.feeSettings),
           })
         }
       } catch (error) {
@@ -1106,10 +1096,8 @@ export default function Cart() {
     : null
   const platformFee = pricing != null ? (pricing.platformFee ?? 0) : (feeSettings.platformFee ?? 0)
   const packagingFee = pricing != null ? (pricing.packagingFee ?? 0) : (feeSettings.packagingFee ?? 0)
-  const tip = pricing != null ? (pricing.tip ?? 0) : tipAmount
-  const donation = pricing != null
-    ? (pricing.donation ?? 0)
-    : (feeSettings.donationOptions?.includes(donationChoice) ? donationChoice : 0)
+  const tip = pricing != null ? (pricing.tip ?? 0) : (feeSettings.deliveryTipEnabled ? feeSettings.deliveryTipAmount : 0)
+  const donation = pricing != null ? (pricing.donation ?? 0) : (feeSettings.donationEnabled ? feeSettings.donationAmount : 0)
   const gstOnItemTotal = pricing?.taxBreakdown?.itemTax ?? (subtotal * ((feeSettings.gstRate ?? 0) / 100));
   const gstOnDeliveryFee = pricing?.taxBreakdown?.deliveryTax ?? (fallbackDeliveryFee * ((feeSettings.gstOnDeliveryFee ?? 0) / 100));
   const gstOnPlatformFee = pricing?.taxBreakdown?.platformTax ?? ((feeSettings.platformFee ?? 0) * ((feeSettings.gstOnPlatformFee ?? 0) / 100));
@@ -1446,8 +1434,6 @@ export default function Cart() {
           restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
           deliveryAddress: defaultAddress,
           couponCode: coupon.code,
-          tip: tipAmount,
-          donation: donationChoice
         })
 
         const pricingData = response?.data?.data?.pricing
@@ -1517,8 +1503,6 @@ export default function Cart() {
         restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
         deliveryAddress: defaultAddress,
         couponCode: inputCode,
-        tip: tipAmount,
-        donation: donationChoice
       })
 
       const pricingData = response?.data?.data?.pricing
@@ -1585,8 +1569,6 @@ export default function Cart() {
           restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
           deliveryAddress: defaultAddress,
           couponCode: null,
-          tip: tipAmount,
-          donation: donationChoice
         })
 
         if (response?.data?.success && response?.data?.data?.pricing) {
@@ -2918,82 +2900,24 @@ export default function Cart() {
                   </div>
                 )}
               </div>
-{/* Tip your delivery partner */}
-              <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-5 rounded-2xl shadow-sm border border-slate-100 dark:border-gray-800">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Tip your delivery partner</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  100% of the tip goes to your delivery partner. Optional.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {[20, 30, 50].map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      onClick={() => {
-                        setShowCustomTip(false)
-                        setCustomTipInput("")
-                        setTipAmount(tipAmount === amt ? 0 : amt)
-                      }}
-                      className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
-                        tipAmount === amt && !showCustomTip
-                          ? "bg-[#EB590E] border-[#EB590E] text-white"
-                          : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200"
-                      }`}
-                    >
-                      {RUPEE_SYMBOL}{amt}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCustomTip((v) => !v)
-                      if (showCustomTip) {
-                        setCustomTipInput("")
-                        setTipAmount(0)
-                      }
-                    }}
-                    className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
-                      showCustomTip
-                        ? "bg-[#EB590E] border-[#EB590E] text-white"
-                        : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200"
-                    }`}
-                  >
-                    Other
-                  </button>
-                  {tipAmount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setTipAmount(0)
-                        setCustomTipInput("")
-                        setShowCustomTip(false)
-                      }}
-                      className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 underline"
-                    >
-                      Remove tip
-                    </button>
-                  )}
+{/* Delivery partner tip (fixed, mandatory) */}
+              {feeSettings.deliveryTipEnabled && feeSettings.deliveryTipAmount > 0 && (
+                <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-5 rounded-2xl shadow-sm border border-slate-100 dark:border-gray-800">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">Delivery Partner Tip</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        100% of this goes to your delivery partner. Included with every order.
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold text-[#EB590E] flex-shrink-0">
+                      {RUPEE_SYMBOL}{feeSettings.deliveryTipAmount}
+                    </span>
+                  </div>
                 </div>
-                {showCustomTip && (
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    max="500"
-                    value={customTipInput}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, 3)
-                      const next = Math.min(Number(raw) || 0, 500)
-                      setCustomTipInput(raw === "" ? "" : String(next))
-                      setTipAmount(next)
-                    }}
-                    placeholder="Enter tip amount (max 500)"
-                    className="mt-3 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111111] px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-[#EB590E]"
-                  />
-                )}
-              </div>
-{/* Donation */}
-              {feeSettings.donationOptions?.length > 0 && (
+              )}
+{/* Donation (fixed, mandatory) */}
+              {feeSettings.donationEnabled && feeSettings.donationAmount > 0 && (
                 <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-5 rounded-2xl shadow-sm border border-slate-100 dark:border-gray-800">
                   <div className="flex items-start gap-3">
                     <div className="h-10 w-10 flex-shrink-0 rounded-full bg-[#FFF2EB] dark:bg-[#EB590E]/15 flex items-center justify-center">
@@ -3001,50 +2925,16 @@ export default function Cart() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
-                        Add a donation
+                        Donation
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Add a small amount to your order and make a difference. Optional.
+                        A small amount included with every order to support the cause.
                       </p>
                     </div>
-                    {donationChoice > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setDonationChoice(0)}
-                        className="text-[#EB590E] text-xs font-semibold px-1 hover:underline flex-shrink-0"
-                      >
-                        REMOVE
-                      </button>
-                    )}
+                    <span className="text-sm font-bold text-[#EB590E] flex-shrink-0">
+                      {RUPEE_SYMBOL}{feeSettings.donationAmount}
+                    </span>
                   </div>
-
-                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {feeSettings.donationOptions.map((amt) => {
-                      const selected = donationChoice === amt
-                      return (
-                        <button
-                          key={amt}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() => setDonationChoice(selected ? 0 : amt)}
-                          className={`relative flex items-center justify-center gap-1 py-2.5 rounded-xl text-sm font-semibold border transition-all active:scale-95 ${
-                            selected
-                              ? "bg-[#EB590E] border-[#EB590E] text-white shadow-sm"
-                              : "bg-white dark:bg-[#111111] border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:border-[#EB590E]"
-                          }`}
-                        >
-                          {selected && <Check className="h-3.5 w-3.5" />}
-                          {RUPEE_SYMBOL}{amt}
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {donationChoice > 0 && (
-                    <p className="mt-3 text-xs font-medium text-green-600 dark:text-green-400">
-                      Thank you! {RUPEE_SYMBOL}{donationChoice} will be added to your bill.
-                    </p>
-                  )}
                 </div>
               )}
 {/* Bill Details */}
