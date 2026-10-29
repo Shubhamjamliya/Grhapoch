@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Save, Loader2, DollarSign, Plus, Trash2, Edit, Check, X } from "lucide-react"
+import { Save, Loader2, DollarSign, Plus, Trash2, Edit, Check, X, Star } from "lucide-react"
 import { Button } from "@food/components/ui/button"
 import { adminAPI } from "@food/api"
 import { toast } from "sonner"
@@ -708,6 +708,9 @@ export default function FeeSettings() {
                     </button>
                   </div>
 
+                  <p className="text-xs font-semibold text-green-700">
+                    Default (pre-selected for customers): {feeSettings.deliveryTipDefaultAmount ? `₹${feeSettings.deliveryTipDefaultAmount}` : "none yet — click the star on an amount below"}
+                  </p>
                   <div className="flex flex-wrap items-center gap-2">
                     {feeSettings.deliveryTipAmounts.length === 0 && (
                       <span className="text-sm text-slate-400">No amounts added yet.</span>
@@ -717,17 +720,19 @@ export default function FeeSettings() {
                       return (
                         <span
                           key={a}
-                          className={`inline-flex items-center gap-1 rounded-full text-sm font-medium pl-3 pr-1.5 py-1 ${
-                            isDefault ? "bg-green-600 text-white" : "bg-green-50 text-green-700"
+                          className={`inline-flex items-center gap-1.5 rounded-full text-sm font-medium pl-1.5 pr-1.5 py-1 border ${
+                            isDefault ? "bg-green-600 text-white border-green-600" : "bg-white text-green-700 border-green-200"
                           }`}
                         >
                           <button
                             type="button"
                             onClick={() => setFeeSettings({ ...feeSettings, deliveryTipDefaultAmount: a })}
-                            title="Set as default"
+                            title={isDefault ? "This is the default amount" : "Click to set as default"}
+                            className={`rounded-full p-1 ${isDefault ? "" : "hover:bg-green-50"}`}
                           >
-                            ₹{a}{isDefault ? " (default)" : ""}
+                            <Star className={`h-3.5 w-3.5 ${isDefault ? "fill-white text-white" : "text-green-400"}`} />
                           </button>
+                          <span>₹{a}</span>
                           <button
                             type="button"
                             onClick={() => removeTipAmount(a)}

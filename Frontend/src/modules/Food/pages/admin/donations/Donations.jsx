@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { Loader2, Search, ChevronLeft, ChevronRight, HeartHandshake, Plus, X } from "lucide-react"
+import { Loader2, Search, ChevronLeft, ChevronRight, HeartHandshake, Plus, X, Star } from "lucide-react"
 import { adminAPI } from "@food/api"
 import { toast } from "sonner"
 
@@ -199,6 +199,9 @@ export default function Donations() {
 
             <div>
               <label className="block text-xs text-slate-500 mb-1">Donation amounts (₹)</label>
+              <p className="text-xs font-semibold text-emerald-700 mb-2">
+                Default (pre-selected for customers): {donationDefaultAmount ? `₹${donationDefaultAmount}` : "none yet — click the star on an amount below"}
+              </p>
               <div className="flex flex-wrap items-center gap-2">
                 {donationAmounts.length === 0 && (
                   <span className="text-sm text-slate-400">No amounts added yet.</span>
@@ -208,13 +211,19 @@ export default function Donations() {
                   return (
                     <span
                       key={a}
-                      className={`inline-flex items-center gap-1 rounded-full text-sm font-medium pl-3 pr-1.5 py-1 ${
-                        isDefault ? "bg-emerald-600 text-white" : "bg-emerald-50 text-emerald-700"
+                      className={`inline-flex items-center gap-1.5 rounded-full text-sm font-medium pl-1.5 pr-1.5 py-1 border ${
+                        isDefault ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-emerald-700 border-emerald-200"
                       }`}
                     >
-                      <button type="button" onClick={() => setDonationDefaultAmount(a)} title="Set as default">
-                        ₹{a}{isDefault ? " (default)" : ""}
+                      <button
+                        type="button"
+                        onClick={() => setDonationDefaultAmount(a)}
+                        title={isDefault ? "This is the default amount" : "Click to set as default"}
+                        className={`rounded-full p-1 ${isDefault ? "" : "hover:bg-emerald-50"}`}
+                      >
+                        <Star className={`h-3.5 w-3.5 ${isDefault ? "fill-white text-white" : "text-emerald-400"}`} />
                       </button>
+                      <span>₹{a}</span>
                       <button
                         type="button"
                         onClick={() => removeAmount(a)}
