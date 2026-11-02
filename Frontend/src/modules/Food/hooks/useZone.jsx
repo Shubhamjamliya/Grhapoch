@@ -31,11 +31,11 @@ const zoneKeyFromCoords = (lat, lng) => {
 }
 
 const applyZonePayload = (data, { setZoneId, setZone, setZoneStatus }) => {
-  if (data?.status === 'IN_SERVICE' && data.zoneId) {
-    setZoneId(data.zoneId)
+  if (data?.status === 'IN_SERVICE') {
+    setZoneId(data.zoneId || null)
     setZone(data.zone || null)
     setZoneStatus('IN_SERVICE')
-    persistZoneContext({ zoneId: data.zoneId, zone: data.zone || null, status: 'IN_SERVICE' })
+    persistZoneContext({ zoneId: data.zoneId || null, zone: data.zone || null, status: 'IN_SERVICE' })
   } else {
     const status = data?.status || 'OUT_OF_SERVICE'
     setZoneId(null)

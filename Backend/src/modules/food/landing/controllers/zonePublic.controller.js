@@ -1,4 +1,5 @@
 import { FoodZone } from '../../admin/models/zone.model.js';
+import { FoodRestaurant } from '../../restaurant/models/restaurant.model.js';
 
 const toFinite = (v) => {
     const n = typeof v === 'number' ? v : parseFloat(String(v));
@@ -64,6 +65,33 @@ const doesZoneServePoint = (lat, lng, zone) => {
     return false;
 };
 
+/**
+ * A point is serviceable if at least one approved restaurant's own delivery
+ * radius covers it — this is the source of truth now, independent of zones.
+ */
+const isServedByAnyRestaurant = async (lat, lng) => {
+    try {
+        const nearby = await FoodRestaurant.aggregate([
+            {
+                $geoNear: {
+                    near: { type: 'Point', coordinates: [lng, lat] },
+                    distanceField: 'distanceMeters',
+                    maxDistance: 20 * 1000, // matches the max allowed deliveryRadiusKm
+                    spherical: true,
+                    query: { status: 'approved' }
+                }
+            },
+            { $project: { distanceMeters: 1, deliveryRadiusKm: 1 } }
+        ]);
+        return nearby.some((r) => {
+            const radiusKm = Number.isFinite(r.deliveryRadiusKm) ? r.deliveryRadiusKm : 5;
+            return (r.distanceMeters / 1000) <= radiusKm;
+        });
+    } catch {
+        return false;
+    }
+};
+
 /** GET /zones/detect?lat=..&lng=.. */
 export const detectZonePublicController = async (req, res, next) => {
     try {
@@ -91,6 +119,16 @@ export const detectZonePublicController = async (req, res, next) => {
                     radiusBlockedZone = zone;
                 }
             }
+        }
+
+        // No zone covers this point — fall back to restaurant-radius serviceability
+        // so the app doesn't block customers just because no zone was ever drawn here.
+        if (await isServedByAnyRestaurant(lat, lng)) {
+            return res.status(200).json({
+                success: true,
+                message: 'Served by nearby restaurant',
+                data: { status: 'IN_SERVICE', zoneId: null, zone: null }
+            });
         }
 
         if (radiusBlockedZone) {
