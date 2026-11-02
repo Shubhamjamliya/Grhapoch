@@ -491,7 +491,7 @@ export default function RestaurantsList() {
     const longitude = (hasValidNumbers && !looksUnset) ? lngNum : ""
 
     return {
-      zoneId: restaurant?.zoneId || restaurant?.location?.zoneId || "",
+      deliveryRadiusKm: Number.isFinite(Number(restaurant?.deliveryRadiusKm)) ? Number(restaurant.deliveryRadiusKm) : 5,
       latitude: latitude || "",
       longitude: longitude || "",
       formattedAddress: loc.formattedAddress || loc.address || "",
@@ -662,8 +662,9 @@ export default function RestaurantsList() {
     const latitude = Number(locationForm.latitude)
     const longitude = Number(locationForm.longitude)
 
-    if (!locationForm.zoneId) {
-      alert("Please select a zone")
+    const deliveryRadiusKm = Number(locationForm.deliveryRadiusKm)
+    if (!Number.isFinite(deliveryRadiusKm) || deliveryRadiusKm < 1 || deliveryRadiusKm > 20) {
+      alert("Delivery radius must be between 1 and 20 km")
       return
     }
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !locationForm.formattedAddress) {
@@ -674,7 +675,7 @@ export default function RestaurantsList() {
     try {
       setSavingLocation(true)
       const locationPayload = {
-        zoneId: locationForm.zoneId,
+        deliveryRadiusKm,
         latitude,
         longitude,
         coordinates: [longitude, latitude],
@@ -2642,23 +2643,22 @@ export default function RestaurantsList() {
                       <h4 className="text-lg font-semibold text-slate-900 mb-4">Location Editor</h4>
                       <div className="space-y-3 border border-indigo-100 bg-indigo-50/40 rounded-xl p-4">
                         <p className="text-xs text-indigo-700 font-semibold">
-                          Update restaurant location using dropdown (accurate) + select service zone.
+                          Update restaurant location using dropdown (accurate) + delivery radius.
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div className="md:col-span-2">
-                            <label className="block text-xs text-slate-600 mb-1 font-semibold">Service Zone*</label>
-                            <select
-                              value={locationForm.zoneId || ""}
-                              onChange={(e) => setLocationForm((prev) => ({ ...prev, zoneId: e.target.value }))}
+                            <label className="block text-xs text-slate-600 mb-1 font-semibold">Delivery Radius (km)*</label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={20}
+                              value={locationForm.deliveryRadiusKm ?? 5}
+                              onChange={(e) => setLocationForm((prev) => ({ ...prev, deliveryRadiusKm: e.target.value }))}
                               className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
-                            >
-                              <option value="">{zonesLoading ? "Loading zones..." : "Select a zone"}</option>
-                              {zones.map((z) => (
-                                <option key={z._id || z.id} value={z._id || z.id}>
-                                  {z.name || z.zoneName || z.serviceLocation || "Zone"}
-                                </option>
-                              ))}
-                            </select>
+                            />
+                            <p className="text-[11px] text-slate-500 mt-1">
+                              Restaurant is visible to customers, and offers go to riders, only within this radius.
+                            </p>
                           </div>
 
                           <div className="md:col-span-2">

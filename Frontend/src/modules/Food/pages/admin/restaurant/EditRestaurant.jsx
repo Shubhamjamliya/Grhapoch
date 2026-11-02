@@ -18,12 +18,6 @@ const isNearZero = (n) => Math.abs(Number(n) || 0) < 0.000001
 
 const normalizeRestaurantId = (r) => r?._id || r?.id || r?.restaurantId || ""
 
-const normalizeZoneId = (zoneId) => {
-  if (!zoneId) return ""
-  if (typeof zoneId === "string") return zoneId
-  return zoneId?._id || zoneId?.id || ""
-}
-
 const normalizeLocationFormFromRestaurant = (restaurant) => {
   const loc =
     restaurant?.location ||
@@ -50,7 +44,9 @@ const normalizeLocationFormFromRestaurant = (restaurant) => {
     ""
 
   return {
-    zoneId: normalizeZoneId(restaurant?.zoneId),
+    deliveryRadiusKm: Number.isFinite(Number(restaurant?.deliveryRadiusKm))
+      ? Number(restaurant.deliveryRadiusKm)
+      : 5,
     formattedAddress,
     addressLine1: loc?.addressLine1 || restaurant?.addressLine1 || formattedAddress,
     addressLine2: loc?.addressLine2 || restaurant?.addressLine2 || "",
@@ -132,8 +128,6 @@ export default function EditRestaurant() {
   const [error, setError] = useState("")
 
   const [restaurant, setRestaurant] = useState(null)
-  const [zones, setZones] = useState([])
-  const [zonesLoading, setZonesLoading] = useState(false)
 
   const [detailsForm, setDetailsForm] = useState(() => normalizeDetailsFormFromRestaurant(null))
   const [locationForm, setLocationForm] = useState(() => normalizeLocationFormFromRestaurant(null))
@@ -180,34 +174,6 @@ export default function EditRestaurant() {
       mounted = false
     }
   }, [restaurantId])
-
-  useEffect(() => {
-    let mounted = true
-    setZonesLoading(true)
-    adminAPI
-      .getZones({ limit: 1000 })
-      .then((res) => {
-        const list =
-          res?.data?.data?.zones ||
-          res?.data?.data?.data?.zones ||
-          res?.data?.data ||
-          []
-        if (!mounted) return
-        setZones(Array.isArray(list) ? list : [])
-      })
-      .catch(() => {
-        if (!mounted) return
-        setZones([])
-      })
-      .finally(() => {
-        if (!mounted) return
-        setZonesLoading(false)
-      })
-
-    return () => {
-      mounted = false
-    }
-  }, [])
 
   useEffect(() => {
     if (!locationSearchInputRef.current) return
@@ -283,12 +249,6 @@ export default function EditRestaurant() {
     }
   }, [])
 
-  const currentZoneLabel = useMemo(() => {
-    const zid = normalizeZoneId(locationForm.zoneId)
-    if (!zid) return ""
-    const z = zones.find((x) => normalizeZoneId(x?._id || x?.id) === zid)
-    return z?.name || z?.zoneName || ""
-  }, [locationForm.zoneId, zones])
 
   const handleSaveDetails = async () => {
     if (!restaurantId) return
@@ -338,8 +298,9 @@ export default function EditRestaurant() {
     const latitude = Number(locationForm.latitude)
     const longitude = Number(locationForm.longitude)
 
-    if (!locationForm.zoneId) {
-      alert("Please select a zone")
+    const deliveryRadiusKm = Number(locationForm.deliveryRadiusKm)
+    if (!Number.isFinite(deliveryRadiusKm) || deliveryRadiusKm < 1 || deliveryRadiusKm > 20) {
+      alert("Delivery radius must be between 1 and 20 km")
       return
     }
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !locationForm.formattedAddress) {
@@ -350,7 +311,7 @@ export default function EditRestaurant() {
     try {
       setSavingLocation(true)
       const payload = {
-        zoneId: locationForm.zoneId,
+        deliveryRadiusKm,
         latitude,
         longitude,
         coordinates: [longitude, latitude],
@@ -502,9 +463,9 @@ export default function EditRestaurant() {
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">Location</h2>
-                  {currentZoneLabel ? (
-                    <p className="text-xs text-slate-500 mt-1">Current Zone: {currentZoneLabel}</p>
-                  ) : null}
+                  <p className="text-xs text-slate-500 mt-1">
+                    Restaurant is visible to customers, and offers go to riders, only within this radius.
+                  </p>
                 </div>
                 <Button onClick={handleSaveLocation} disabled={savingLocation}>
                   {savingLocation ? (
@@ -526,24 +487,15 @@ export default function EditRestaurant() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <Label>Service Zone</Label>
-                  <select
-                    value={locationForm.zoneId || ""}
-                    onChange={(e) => setLocationForm((p) => ({ ...p, zoneId: e.target.value }))}
-                    className="mt-1 h-10 w-full rounded-md border border-input bg-white px-3 text-sm"
-                    disabled={zonesLoading}
-                  >
-                    <option value="">{zonesLoading ? "Loading zones..." : "Select a zone"}</option>
-                    {zones.map((z) => {
-                      const zid = normalizeZoneId(z?._id || z?.id)
-                      const label = z?.name || z?.zoneName || zid
-                      return (
-                        <option key={zid} value={zid}>
-                          {label}
-                        </option>
-                      )
-                    })}
-                  </select>
+                  <Label>Delivery Radius (km)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={locationForm.deliveryRadiusKm ?? 5}
+                    onChange={(e) => setLocationForm((p) => ({ ...p, deliveryRadiusKm: e.target.value }))}
+                    className="mt-1 bg-white text-sm"
+                  />
                 </div>
 
                 <div className="md:col-span-2">

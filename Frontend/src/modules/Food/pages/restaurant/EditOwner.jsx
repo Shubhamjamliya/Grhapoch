@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@food/components/ui/dialog"
-import { restaurantAPI, zoneAPI } from "@food/api"
+import { restaurantAPI } from "@food/api"
 import OptimizedImage from "@food/components/OptimizedImage"
 import { clearModuleAuth } from "@food/utils/auth"
 import { firebaseAuth, ensureFirebaseInitialized } from "@food/firebase"
@@ -63,7 +63,7 @@ export default function EditOwner() {
     accountHolderName: "",
     accountType: "",
     upiId: "",
-    zoneId: "",
+    deliveryRadiusKm: 5,
     location: {
       formattedAddress: "",
       addressLine1: "",
@@ -77,7 +77,7 @@ export default function EditOwner() {
       longitude: "",
     }
   })
-  
+
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -93,7 +93,7 @@ export default function EditOwner() {
     accountHolderName: "",
     accountType: "",
     upiId: "",
-    zoneId: "",
+    deliveryRadiusKm: 5,
     location: {
       formattedAddress: "",
       addressLine1: "",
@@ -115,8 +115,6 @@ export default function EditOwner() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isPhotoPickerOpen, setIsPhotoPickerOpen] = useState(false)
-  const [zones, setZones] = useState([])
-  const [zonesLoading, setZonesLoading] = useState(false)
   const [restaurantStatus, setRestaurantStatus] = useState({
     status: '',
     pendingUpdateReason: '',
@@ -172,7 +170,7 @@ export default function EditOwner() {
             accountHolderName: data.accountHolderName || "",
             accountType: data.accountType || "",
             upiId: data.upiId || "",
-            zoneId: data.zoneId || "",
+            deliveryRadiusKm: Number.isFinite(Number(data.deliveryRadiusKm)) ? Number(data.deliveryRadiusKm) : 5,
             location: {
               formattedAddress: data.location?.formattedAddress || data.address || "",
               addressLine1: data.location?.addressLine1 || "",
@@ -216,24 +214,6 @@ export default function EditOwner() {
     }
 
     fetchRestaurantData()
-  }, [])
-
-  // Load zones
-  useEffect(() => {
-    let cancelled = false
-    setZonesLoading(true)
-    zoneAPI.getPublicZones()
-      .then((res) => {
-        const list = res?.data?.data?.zones || res?.data?.zones || []
-        if (!cancelled) setZones(Array.isArray(list) ? list : [])
-      })
-      .catch(() => {
-        if (!cancelled) setZones([])
-      })
-      .finally(() => {
-        if (!cancelled) setZonesLoading(false)
-      })
-    return () => { cancelled = true }
   }, [])
 
   // Google Maps Autocomplete logic
@@ -373,11 +353,10 @@ export default function EditOwner() {
       formData.accountHolderName !== ownerData.accountHolderName ||
       formData.accountType !== ownerData.accountType ||
       formData.upiId !== ownerData.upiId ||
-      formData.zoneId !== ownerData.zoneId ||
       JSON.stringify(formData.location) !== JSON.stringify(ownerData.location) ||
       profileImageFile !== null
     setHasChanges(changed)
-  }, [formData.name, formData.email, formData.restaurantName, formData.primaryContactNumber, formData.pureVegRestaurant, formData.panNumber, formData.nameOnPan, formData.accountNumber, formData.ifscCode, formData.accountHolderName, formData.accountType, formData.upiId, formData.zoneId, formData.location, ownerData.name, ownerData.email, ownerData.restaurantName, ownerData.primaryContactNumber, ownerData.pureVegRestaurant, ownerData.panNumber, ownerData.nameOnPan, ownerData.accountNumber, ownerData.ifscCode, ownerData.accountHolderName, ownerData.accountType, ownerData.upiId, ownerData.zoneId, ownerData.location, profileImageFile])
+  }, [formData.name, formData.email, formData.restaurantName, formData.primaryContactNumber, formData.pureVegRestaurant, formData.panNumber, formData.nameOnPan, formData.accountNumber, formData.ifscCode, formData.accountHolderName, formData.accountType, formData.upiId, formData.location, ownerData.name, ownerData.email, ownerData.restaurantName, ownerData.primaryContactNumber, ownerData.pureVegRestaurant, ownerData.panNumber, ownerData.nameOnPan, ownerData.accountNumber, ownerData.ifscCode, ownerData.accountHolderName, ownerData.accountType, ownerData.upiId, ownerData.location, profileImageFile])
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -454,7 +433,6 @@ export default function EditOwner() {
         accountHolderName: formData.accountHolderName.trim(),
         accountType: formData.accountType,
         upiId: formData.upiId.trim(),
-        zoneId: formData.zoneId,
         ...formData.location
       }
 
@@ -717,25 +695,19 @@ export default function EditOwner() {
 
             <div className="pt-6 pb-2 border-t border-gray-100">
               <h3 className="text-base font-bold text-gray-900">Restaurant Location</h3>
-              <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest font-black">ZONE & ADDRESS</p>
+              <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest font-black">DELIVERY RADIUS & ADDRESS</p>
             </div>
 
-            {/* Service Zone */}
+            {/* Delivery Radius (read-only here; change it from Zone Setup) */}
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Service Zone*</label>
-              <select
-                value={formData.zoneId || ""}
-                onChange={(e) => handleInputChange("zoneId", e.target.value)}
-                className="w-full h-10 rounded-md border border-gray-200 bg-gray-50 text-gray-500 px-3 text-sm focus:outline-none cursor-not-allowed appearance-none"
-                disabled={true}
-              >
-                <option value="">{zonesLoading ? "Loading zones..." : "Select a zone"}</option>
-                {zones.map((z) => {
-                  const id = String(z?._id || z?.id || "")
-                  const label = z?.name || z?.zoneName || z?.serviceLocation || id
-                  return <option key={id} value={id}>{label}</option>
-                })}
-              </select>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Delivery Radius (km)</label>
+              <input
+                value={`${formData.deliveryRadiusKm ?? 5} km`}
+                readOnly
+                disabled
+                className="w-full h-10 rounded-md border border-gray-200 bg-gray-50 text-gray-500 px-3 text-sm focus:outline-none cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-400 mt-1">Change this from the Zone Setup page.</p>
             </div>
 
 

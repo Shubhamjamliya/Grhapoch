@@ -220,6 +220,17 @@ const restaurantSchema = new mongoose.Schema(
       ref: "FoodZone",
       index: true,
     },
+    /**
+     * Delivery radius (km) around `location`. Restaurant is shown to a customer,
+     * and offers go to delivery partners, only within this distance.
+     * Defaults at registration and can be overridden by admin.
+     */
+    deliveryRadiusKm: {
+      type: Number,
+      default: 5,
+      min: 1,
+      max: 20,
+    },
     previousZoneId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "FoodZone",

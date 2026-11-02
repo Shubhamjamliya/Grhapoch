@@ -100,14 +100,8 @@ export const adminSidebarMenu = [
     items: [
       {
         type: "link",
-        label: "Zone Setup",
-        path: "/admin/food/zone-setup",
-        icon: "MapPin",
-      },
-      {
-        type: "link",
-        label: "Zone Ranking",
-        path: "/admin/food/zone-ranking",
+        label: "Range Setup",
+        path: "/admin/food/range-setup",
         icon: "MapPin",
       },
       {

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import useRestaurantBackNavigation from "@food/hooks/useRestaurantBackNavigation"
 import { MapPin, Search, Save, Loader2, ArrowLeft, Navigation } from "lucide-react"
-import { restaurantAPI, zoneAPI } from "@food/api"
+import { restaurantAPI } from "@food/api"
 import { loadGoogleMaps as loadGoogleMapsScript } from "@food/utils/googleMapsLoader"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
@@ -66,15 +66,11 @@ export default function ZoneSetup() {
   const [locationSearch, setLocationSearch] = useState("")
   const [selectedLocation, setSelectedLocation] = useState(null)
   const [selectedAddress, setSelectedAddress] = useState("")
-  const [zones, setZones] = useState([])
-  const [currentZone, setCurrentZone] = useState(null)
-  const [isInZone, setIsInZone] = useState(false)
-  const [checkingZone, setCheckingZone] = useState(false)
-  const polygonRefs = useRef([])
+  const [deliveryRadiusKm, setDeliveryRadiusKm] = useState(5)
+  const radiusCircleRef = useRef(null)
 
   useEffect(() => {
     fetchRestaurantData()
-    fetchZones()
     bootstrapZoneMap()
   }, [])
 
@@ -118,16 +114,6 @@ export default function ZoneSetup() {
     }
   }
 
-  const fetchZones = async () => {
-    try {
-      const response = await zoneAPI.getPublicZones()
-      const list = response?.data?.data?.zones || response?.data?.zones || []
-      setZones(Array.isArray(list) ? list : [])
-    } catch (error) {
-      debugError("Error fetching zones:", error)
-    }
-  }
-
   // Initialize Places Autocomplete when map is loaded
   useEffect(() => {
     if (!mapLoading && mapInstanceRef.current && autocompleteInputRef.current && window.google?.maps?.places && !autocompleteRef.current) {
@@ -156,10 +142,10 @@ export default function ZoneSetup() {
           
           // Set selected location
           setSelectedLocation({ lat, lng, address })
-          checkLocationInZone(lat, lng)
+          drawRadiusCircle(lat, lng)
         }
       })
-      
+
       autocompleteRef.current = autocomplete
     }
   }, [mapLoading])
@@ -169,6 +155,10 @@ export default function ZoneSetup() {
     if (restaurantData?.location && mapInstanceRef.current && !mapLoading && window.google) {
       const location = restaurantData.location
       const savedCoords = getSavedLocationCoords(location)
+
+      if (Number.isFinite(Number(restaurantData.deliveryRadiusKm))) {
+        setDeliveryRadiusKm(Number(restaurantData.deliveryRadiusKm))
+      }
 
       if (savedCoords) {
         const { lat, lng } = savedCoords
@@ -187,13 +177,13 @@ export default function ZoneSetup() {
               setSelectedAddress(address)
               setSelectedLocation({ lat, lng, address })
               updateMarker(lat, lng, address)
-              checkLocationInZone(lat, lng)
+              drawRadiusCircle(lat, lng)
             } else {
               setLocationSearch(existingAddress)
               setSelectedAddress(existingAddress)
               setSelectedLocation({ lat, lng, address: existingAddress })
               updateMarker(lat, lng, existingAddress)
-              checkLocationInZone(lat, lng)
+              drawRadiusCircle(lat, lng)
             }
           })
         } else {
@@ -201,91 +191,39 @@ export default function ZoneSetup() {
           setSelectedAddress(existingAddress)
           setSelectedLocation({ lat, lng, address: existingAddress })
           updateMarker(lat, lng, existingAddress)
-          checkLocationInZone(lat, lng)
+          drawRadiusCircle(lat, lng)
         }
       }
     }
   }, [restaurantData, mapLoading])
 
-  const checkLocationInZone = async (lat, lng) => {
-    try {
-      setCheckingZone(true)
-      const response = await zoneAPI.detectZone(lat, lng)
-      const detected = response?.data?.data?.zone || response?.data?.zone
-      
-      if (detected) {
-        setCurrentZone(detected)
-        setIsInZone(true)
-      } else {
-        setCurrentZone(null)
-        setIsInZone(false)
-      }
-    } catch (error) {
-      debugError("Error detecting zone:", error)
-      // Fallback: check manually if map is loaded
-      if (window.google && polygonRefs.current.length > 0) {
-        const point = new window.google.maps.LatLng(lat, lng)
-        let found = false
-        for (const poly of polygonRefs.current) {
-          if (window.google.maps.geometry?.poly?.containsLocation(point, poly.polygon)) {
-            setCurrentZone({ name: poly.name, _id: poly.id })
-            setIsInZone(true)
-            found = true
-            break
-          }
-        }
-        if (!found) {
-          setCurrentZone(null)
-          setIsInZone(false)
-        }
-      }
-    } finally {
-      setCheckingZone(false)
+  // Draw/update the delivery-radius circle on the map around the selected location.
+  const drawRadiusCircle = (lat, lng, radiusKm = deliveryRadiusKm) => {
+    if (!window.google || !mapInstanceRef.current) return
+
+    if (radiusCircleRef.current) {
+      radiusCircleRef.current.setMap(null)
+      radiusCircleRef.current = null
     }
+
+    radiusCircleRef.current = new window.google.maps.Circle({
+      strokeColor: "#ef4444",
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: "#ef4444",
+      fillOpacity: 0.12,
+      map: mapInstanceRef.current,
+      center: { lat, lng },
+      radius: Math.max(1, Number(radiusKm) || 0) * 1000,
+    })
   }
 
-  // Draw zones on map whenever they change or map is ready
+  // Redraw the circle whenever the radius input changes, keeping it centered on the current location.
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.google || !zones.length) return
-
-    // Clear existing polygons
-    polygonRefs.current.forEach(p => p.polygon.setMap(null))
-    polygonRefs.current = []
-
-    debugLog(`?? Rendering ${zones.length} zones reactively...`)
-    zones.forEach((z) => {
-      if (!z.coordinates || !Array.isArray(z.coordinates) || z.coordinates.length < 3) return
-
-      const paths = z.coordinates.map((c) => ({
-        lat: Number(c.latitude),
-        lng: Number(c.longitude),
-      }))
-
-      const isAssignedZone = restaurantData?.zoneId === (z._id || z.id)
-      
-      const polygon = new window.google.maps.Polygon({
-        paths: paths,
-        strokeColor: isAssignedZone ? "#22c55e" : "#ef4444",
-        strokeOpacity: 0.8,
-        strokeWeight: 2,
-        fillColor: isAssignedZone ? "#22c55e" : "#ef4444",
-        fillOpacity: 0.15,
-        map: mapInstanceRef.current,
-      })
-
-      polygon.addListener("click", (event) => {
-        const lat = event.latLng.lat()
-        const lng = event.latLng.lng()
-        window.google.maps.event.trigger(mapInstanceRef.current, 'click', event)
-      })
-
-      polygonRefs.current.push({
-        id: z._id || z.id,
-        name: z.name || z.zoneName,
-        polygon: polygon
-      })
-    })
-  }, [zones, mapLoading, restaurantData?.zoneId])
+    if (selectedLocation) {
+      drawRadiusCircle(selectedLocation.lat, selectedLocation.lng, deliveryRadiusKm)
+    }
+  }, [deliveryRadiusKm])
 
   const fetchRestaurantData = async () => {
     try {
@@ -347,7 +285,7 @@ export default function ZoneSetup() {
               setSelectedAddress(address)
               setSelectedLocation({ lat, lng, address })
               updateMarker(lat, lng, address)
-              checkLocationInZone(lat, lng)
+              drawRadiusCircle(lat, lng)
             } else {
               // Fallback to coordinates if geocoding fails
               const address = `${lat.toFixed(6)}, ${lng.toFixed(6)}`
@@ -355,7 +293,7 @@ export default function ZoneSetup() {
               setSelectedAddress(address)
               setSelectedLocation({ lat, lng, address })
               updateMarker(lat, lng, address)
-              checkLocationInZone(lat, lng)
+              drawRadiusCircle(lat, lng)
             }
           })
         } else {
@@ -364,7 +302,7 @@ export default function ZoneSetup() {
           setSelectedAddress(address)
           setSelectedLocation({ lat, lng, address })
           updateMarker(lat, lng, address)
-          checkLocationInZone(lat, lng)
+          drawRadiusCircle(lat, lng)
         }
       })
 
@@ -433,13 +371,13 @@ export default function ZoneSetup() {
               `)
             }
 
-            checkLocationInZone(newLat, newLng)
+            drawRadiusCircle(newLat, newLng)
           } else {
             const newAddress = `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`
             setLocationSearch(newAddress)
             setSelectedAddress(newAddress)
             setSelectedLocation({ lat: newLat, lng: newLng, address: newAddress })
-            checkLocationInZone(newLat, newLng)
+            drawRadiusCircle(newLat, newLng)
           }
         })
       } else {
@@ -447,7 +385,7 @@ export default function ZoneSetup() {
         setLocationSearch(newAddress)
         setSelectedAddress(newAddress)
         setSelectedLocation({ lat: newLat, lng: newLng, address: newAddress })
-        checkLocationInZone(newLat, newLng)
+        drawRadiusCircle(newLat, newLng)
       }
     })
 
@@ -482,17 +420,19 @@ export default function ZoneSetup() {
       return
     }
 
-    if (!isInZone) {
-      const confirmSave = window.confirm("The selected location is outside all active service zones. Your restaurant may not receive orders in this location. Do you still want to save?")
-      if (!confirmSave) return
+    const radius = Number(deliveryRadiusKm)
+    if (!Number.isFinite(radius) || radius < 1 || radius > 20) {
+      alert("Delivery radius must be between 1 and 20 km")
+      return
     }
 
     try {
       setSaving(true)
-      
+
       const { lat, lng, address } = selectedLocation
-      
+
       const payload = {
+        deliveryRadiusKm: radius,
         location: {
           ...(restaurantData?.location || {}),
           latitude: lat,
@@ -500,10 +440,6 @@ export default function ZoneSetup() {
           coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
           formattedAddress: address
         }
-      }
-
-      if (currentZone && (currentZone._id || currentZone.id)) {
-        payload.zoneId = currentZone._id || currentZone.id
       }
 
       // Update restaurant location
@@ -551,14 +487,14 @@ export default function ZoneSetup() {
               setSelectedAddress(address)
               setSelectedLocation({ lat, lng, address })
               updateMarker(lat, lng, address)
-              checkLocationInZone(lat, lng)
+              drawRadiusCircle(lat, lng)
             } else {
               const address = `${lat.toFixed(6)}, ${lng.toFixed(6)}`
               setLocationSearch(address)
               setSelectedAddress(address)
               setSelectedLocation({ lat, lng, address })
               updateMarker(lat, lng, address)
-              checkLocationInZone(lat, lng)
+              drawRadiusCircle(lat, lng)
             }
             setFetchingLocation(false)
           })
@@ -568,7 +504,7 @@ export default function ZoneSetup() {
           setSelectedAddress(address)
           setSelectedLocation({ lat, lng, address })
           updateMarker(lat, lng, address)
-          checkLocationInZone(lat, lng)
+          drawRadiusCircle(lat, lng)
           setFetchingLocation(false)
         }
       },
@@ -599,8 +535,8 @@ export default function ZoneSetup() {
               <MapPin className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Zone Setup</h1>
-              <p className="text-sm text-gray-600">Set your restaurant location on the map</p>
+              <h1 className="text-2xl font-bold text-gray-900">Delivery Radius</h1>
+              <p className="text-sm text-gray-600">Set your restaurant location and delivery radius</p>
             </div>
           </div>
         </div>
@@ -652,6 +588,24 @@ export default function ZoneSetup() {
               )}
             </button>
           </div>
+
+          <div className="mt-3 flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              Delivery Radius (km)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={20}
+              value={deliveryRadiusKm}
+              onChange={(e) => setDeliveryRadiusKm(e.target.value)}
+              className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500">
+              Customers can order, and riders get offers, only within this radius of your restaurant.
+            </p>
+          </div>
+
           {selectedLocation && (
             <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-gray-700">
@@ -663,30 +617,6 @@ export default function ZoneSetup() {
             </div>
           )}
         </div>
-
-        {/* Zone Status Banner */}
-        {selectedLocation && (
-          <div className={`p-4 rounded-lg border mb-6 flex items-center justify-between ${
-            isInZone ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-          }`}>
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${isInZone ? "bg-green-100" : "bg-red-100"}`}>
-                <MapPin className={`w-5 h-5 ${isInZone ? "text-green-600" : "text-red-600"}`} />
-              </div>
-              <div>
-                <h3 className={`text-sm font-bold ${isInZone ? "text-green-900" : "text-red-900"}`}>
-                  {checkingZone ? "Checking service zone..." : isInZone ? `Operating in ${currentZone?.name || "Service Zone"}` : "Outside Service Area"}
-                </h3>
-                <p className={`text-xs ${isInZone ? "text-green-700" : "text-red-700"}`}>
-                  {isInZone 
-                    ? "Your selected location is within a serviced area. You can proceed with this setup."
-                    : "Orders cannot be placed from this location as it's outside all active zones."}
-                </p>
-              </div>
-            </div>
-            {checkingZone && <Loader2 className="w-5 h-5 animate-spin text-gray-400" />}
-          </div>
-        )}
 
         {/* Map Container */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">

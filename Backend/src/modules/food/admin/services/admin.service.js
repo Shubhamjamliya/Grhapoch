@@ -311,7 +311,7 @@ export async function getRestaurants(query) {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
-            .select('restaurantName location area city profileImage coverImages menuImages menuPdf status rejectionReason rejectedAt isBanned ownerName ownerPhone zoneId zoneRank rating discount itemDiscounts discountRules openingTime closingTime deliveryTimings onboarding openDays estimatedDeliveryTime isActive')
+            .select('restaurantName location area city profileImage coverImages menuImages menuPdf status rejectionReason rejectedAt isBanned ownerName ownerPhone zoneId zoneRank deliveryRadiusKm rating discount itemDiscounts discountRules openingTime closingTime deliveryTimings onboarding openDays estimatedDeliveryTime isActive')
             .populate('zoneId', 'name zoneName')
             .lean(),
         FoodRestaurant.countDocuments(filter)
@@ -2854,6 +2854,14 @@ export async function updateRestaurantLocation(id, body = {}) {
         }
     }
 
+    if (body.deliveryRadiusKm !== undefined) {
+        const radius = Number(body.deliveryRadiusKm);
+        if (!Number.isFinite(radius)) {
+            throw new ValidationError('Invalid deliveryRadiusKm');
+        }
+        doc.deliveryRadiusKm = Math.min(20, Math.max(1, radius));
+    }
+
     await doc.save();
     return FoodRestaurant.findById(id).select('-__v').populate('zoneId', 'name zoneName serviceLocation isActive').lean();
 }
@@ -3640,6 +3648,11 @@ export async function createRestaurantByAdmin(body) {
         } else {
             doc.zoneId = new mongoose.Types.ObjectId(zoneId);
         }
+    }
+
+    if (body.deliveryRadiusKm !== undefined) {
+        const radius = Number(body.deliveryRadiusKm);
+        doc.deliveryRadiusKm = Number.isFinite(radius) ? Math.min(20, Math.max(1, radius)) : 5;
     }
 
     if (latitude !== null && longitude !== null) {

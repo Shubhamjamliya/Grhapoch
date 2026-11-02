@@ -294,6 +294,12 @@ export const searchUnified = async (query = {}, options = {}) => {
         if (maxRadius > 0) {
             results = results.filter(res => (res.distanceScore || 999) <= maxRadius);
         }
+
+        // Visible only within each restaurant's own delivery radius, not just the broader search radius above.
+        results = results.filter(res => {
+            const ownRadiusKm = Number.isFinite(res.deliveryRadiusKm) ? res.deliveryRadiusKm : 5;
+            return (res.distanceScore || 999) <= ownRadiusKm;
+        });
     }
 
     // ... (rest of logic up to result formation)

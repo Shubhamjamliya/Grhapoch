@@ -6,7 +6,6 @@ import { FoodDeliveryCashDeposit } from '../../delivery/models/foodDeliveryCashD
 import { FoodDeliveryCashLimit } from '../../admin/models/deliveryCashLimit.model.js';
 import { FoodFeeSettings } from '../../admin/models/feeSettings.model.js';
 import { getDeliveryMultiOrderSettings, ACTIVE_DELIVERY_ORDER_STATUSES } from '../../delivery/services/deliveryMultiOrderSettings.service.js';
-import { FoodZone } from '../../admin/models/zone.model.js';
 import { ValidationError, NotFoundError } from '../../../../core/auth/errors.js';
 import { logger } from '../../../../utils/logger.js';
 import { sendVoipPushNotification } from '../../../../core/notifications/voip.service.js';
@@ -26,22 +25,6 @@ import {
   removeDeliveryOffersForPartners,
   clearDeliveryOffersForOrder,
 } from './order-dispatch.firebase.js';
-
-function isPointInPolygon(lat, lng, polygon) {
-  if (!Array.isArray(polygon) || polygon.length < 3) return false;
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].longitude;
-    const yi = polygon[i].latitude;
-    const xj = polygon[j].longitude;
-    const yj = polygon[j].latitude;
-    const intersect =
-      yi > lat !== yj > lat &&
-      lng < ((xj - xi) * (lat - yi)) / (yj - yi + 0.0) + xi;
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
 
 async function getCapacityFullDeliveryPartnerIds() {
   const settings = await getDeliveryMultiOrderSettings();
@@ -94,31 +77,16 @@ async function listNearbyOnlineDeliveryPartners(
     limit = null,
     requiredAmount = 0,
     allowOverLimitFallback = true,
-    zoneOnly = true,
   } = {},
 ) {
   const rId = (restaurantId?._id || restaurantId).toString();
   const restaurant = await FoodRestaurant.findById(rId)
-    .select('location zoneId')
+    .select('location')
     .lean();
 
   if (!restaurant?.location?.coordinates?.length) {
     logger.warn(`listNearbyOnlineDeliveryPartners: Restaurant ${rId} has no location coordinates. Skipping dispatch.`);
     return { restaurant: null, partners: [] };
-  }
-
-  let zonePolygon = null;
-  if (zoneOnly && restaurant.zoneId) {
-    const zoneDoc = await FoodZone.findById(restaurant.zoneId)
-      .select('coordinates isActive')
-      .lean();
-    if (
-      zoneDoc?.isActive !== false &&
-      Array.isArray(zoneDoc?.coordinates) &&
-      zoneDoc.coordinates.length >= 3
-    ) {
-      zonePolygon = zoneDoc.coordinates;
-    }
   }
 
   const [rLng, rLat] = restaurant.location.coordinates;
@@ -131,7 +99,6 @@ async function listNearbyOnlineDeliveryPartners(
     .lean();
 
   const radiusEligible = [];
-  const zoneEligible = [];
 
   for (const p of allOnline) {
     if (capacityFullIds.has(String(p._id))) continue;
@@ -142,40 +109,25 @@ async function listNearbyOnlineDeliveryPartners(
       const d = haversineKm(rLat, rLng, p.lastLat, p.lastLng);
       if (!Number.isFinite(d) || d > maxKm) continue;
 
-      const entry = {
+      radiusEligible.push({
         partnerId: p._id,
         distanceKm: d,
         status: p.status,
         locationUnknown: false,
-      };
-      radiusEligible.push(entry);
-
-      if (!zonePolygon || isPointInPolygon(p.lastLat, p.lastLng, zonePolygon)) {
-        zoneEligible.push(entry);
-      }
+      });
       continue;
     }
 
     // Riders without saved GPS still receive offers — location is tracked live in Firebase.
-    const entry = {
+    radiusEligible.push({
       partnerId: p._id,
       distanceKm: null,
       status: p.status,
       locationUnknown: true,
-    };
-    radiusEligible.push(entry);
-    zoneEligible.push(entry);
+    });
   }
 
-  let scored = radiusEligible;
-  if (zoneOnly && zonePolygon) {
-    scored = zoneEligible.length > 0 ? zoneEligible : radiusEligible;
-    if (zoneEligible.length === 0 && radiusEligible.length > 0) {
-      logger.info(
-        `[Dispatch] Zone polygon matched 0 riders for restaurant ${rId}; falling back to ${radiusEligible.length} radius-eligible riders`,
-      );
-    }
-  }
+  const scored = radiusEligible;
 
   scored.sort((a, b) => {
     if (a.distanceKm == null && b.distanceKm == null) return 0;
@@ -190,7 +142,7 @@ async function listNearbyOnlineDeliveryPartners(
 
   if (picked.length === 0) {
     logger.warn(
-      `[Dispatch] No eligible riders for restaurant ${rId}: online=${allOnline.length}, busy=${capacityFullIds.size}, radiusKm=${maxKm}, zoneFilter=${Boolean(zonePolygon && zoneOnly)}`,
+      `[Dispatch] No eligible riders for restaurant ${rId}: online=${allOnline.length}, busy=${capacityFullIds.size}, radiusKm=${maxKm}`,
     );
     return { partners: [] };
   }
@@ -544,7 +496,6 @@ async function resendDeliveryNotificationForOrder(order, options = {}) {
     maxKm: maxZoneRadius,
     requiredAmount,
     allowOverLimitFallback: true,
-    zoneOnly: true,
   });
   const shortlistedCount = Array.isArray(preview?.partners) ? preview.partners.length : 0;
 
@@ -654,24 +605,12 @@ export async function resetDispatchForFreshHunt(orderId) {
  * @param {string} [options.zoneId]
  * @returns {Promise<{ available: boolean, count: number, reason: string }>}
  */
-export async function checkRidersAvailabilityInZone({ restaurantId, zoneId } = {}) {
+export async function checkRidersAvailabilityInZone({ restaurantId } = {}) {
   let restaurant = null;
   if (restaurantId) {
     try {
       restaurant = await FoodRestaurant.findById(restaurantId)
-        .select('location zoneId')
-        .lean();
-    } catch {
-      // ignore invalid ObjectId format
-    }
-  }
-
-  const effectiveZoneId = zoneId || restaurant?.zoneId;
-  let zoneDoc = null;
-  if (effectiveZoneId) {
-    try {
-      zoneDoc = await FoodZone.findById(effectiveZoneId)
-        .select('coordinates isActive name')
+        .select('location deliveryRadiusKm')
         .lean();
     } catch {
       // ignore invalid ObjectId format
@@ -698,31 +637,20 @@ export async function checkRidersAvailabilityInZone({ restaurantId, zoneId } = {
     return { available: false, count: 0, reason: 'all_riders_busy' };
   }
 
-  let zonePolygon = null;
-  if (
-    zoneDoc?.isActive !== false &&
-    Array.isArray(zoneDoc?.coordinates) &&
-    zoneDoc.coordinates.length >= 3
-  ) {
-    zonePolygon = zoneDoc.coordinates;
-  }
-
   const restCoords = restaurant?.location?.coordinates;
   const hasRestCoords = Array.isArray(restCoords) && restCoords.length === 2;
   const rLng = hasRestCoords ? restCoords[0] : null;
   const rLat = hasRestCoords ? restCoords[1] : null;
+  const maxKm = Number.isFinite(restaurant?.deliveryRadiusKm) ? restaurant.deliveryRadiusKm : 15;
 
   const eligibleRiders = nonBusyRiders.filter((p) => {
     const lat = p.lastLat ?? (Array.isArray(p.lastLocation?.coordinates) ? p.lastLocation.coordinates[1] : null);
     const lng = p.lastLng ?? (Array.isArray(p.lastLocation?.coordinates) ? p.lastLocation.coordinates[0] : null);
 
     if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)) {
-      if (zonePolygon) {
-        return isPointInPolygon(lat, lng, zonePolygon);
-      }
       if (rLat != null && rLng != null) {
         const d = haversineKm(rLat, rLng, lat, lng);
-        return Number.isFinite(d) && d <= 15;
+        return Number.isFinite(d) && d <= maxKm;
       }
       return true;
     }
@@ -732,7 +660,7 @@ export async function checkRidersAvailabilityInZone({ restaurantId, zoneId } = {
   });
 
   if (eligibleRiders.length === 0) {
-    return { available: false, count: 0, reason: 'no_riders_in_zone' };
+    return { available: false, count: 0, reason: 'no_riders_in_radius' };
   }
 
   return {

@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@food/components/ui/input"
 import { Label } from "@food/components/ui/label"
 import { Button } from "@food/components/ui/button"
-import { adminAPI, uploadAPI, zoneAPI } from "@food/api"
+import { adminAPI, uploadAPI } from "@food/api"
 import { toast } from "sonner"
 import { getImageValidationError, getUploadErrorMessage } from '@/shared/utils/uploadErrors.js'
 import { EMAIL_REGEX } from "@/shared/utils/emailValidation"
@@ -161,8 +161,6 @@ export default function AddRestaurant() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [formErrors, setFormErrors] = useState({})
-  const [zones, setZones] = useState([])
-  const [zonesLoading, setZonesLoading] = useState(false)
   const [isHydrated, setIsHydrated] = useState(false)
 
   // Step 1: Basic Info
@@ -173,7 +171,7 @@ export default function AddRestaurant() {
     ownerEmail: "",
     ownerPhone: "",
     primaryContactNumber: "",
-    zoneId: "",
+    deliveryRadiusKm: 5,
     location: {
       addressLine1: "",
       addressLine2: "",
@@ -428,7 +426,6 @@ export default function AddRestaurant() {
     if (step1.ownerPhone?.trim() && !PHONE_REGEX.test(step1.ownerPhone.trim())) errors.push("Owner phone number must be 10 digits")
     if (!step1.primaryContactNumber?.trim()) errors.push("Primary contact number is required")
     if (step1.primaryContactNumber?.trim() && !PHONE_REGEX.test(step1.primaryContactNumber.trim())) errors.push("Primary contact number must be 10 digits")
-    if (!step1.zoneId?.trim()) errors.push("Service zone is required")
     if (!step1.location?.area?.trim()) errors.push("Area/Sector/Locality is required")
     if (!step1.location?.city?.trim()) errors.push("City is required")
     return errors
@@ -577,7 +574,7 @@ export default function AddRestaurant() {
         ownerEmail: step1.ownerEmail,
         ownerPhone: step1.ownerPhone,
         primaryContactNumber: step1.primaryContactNumber,
-        zoneId: step1.zoneId,
+        deliveryRadiusKm: step1.deliveryRadiusKm,
         location: step1.location,
         // Step 2
         menuImages: menuImagesData,
@@ -637,28 +634,6 @@ export default function AddRestaurant() {
   const [locationSearchValue, setLocationSearchValue] = useState("")
   const [locationSuggestions, setLocationSuggestions] = useState([])
   const [isSearchingLocation, setIsSearchingLocation] = useState(false)
-
-  useEffect(() => {
-    if (step !== 1) return
-    let cancelled = false
-    setZonesLoading(true)
-    zoneAPI
-      .getPublicZones()
-      .then((res) => {
-        const list = res?.data?.data?.zones || res?.data?.zones || []
-        if (!cancelled) setZones(Array.isArray(list) ? list : [])
-      })
-      .catch(() => {
-        if (!cancelled) setZones([])
-      })
-      .finally(() => {
-        if (!cancelled) setZonesLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [step])
 
   // Initialize Google Places Autocomplete for Step 1 location search.
   useEffect(() => {
@@ -1016,26 +991,17 @@ export default function AddRestaurant() {
           </p>
         </div>
         <div>
-          <Label className="text-xs text-gray-700">Service zone*</Label>
-          <select
-            value={step1.zoneId || ""}
-            onChange={(e) => setStep1({ ...step1, zoneId: e.target.value })}
-            className="mt-1 w-full h-9 rounded-md border border-input bg-white px-3 text-sm"
-            disabled={zonesLoading}
-          >
-            <option value="">{zonesLoading ? "Loading zones..." : "Select a zone"}</option>
-            {zones.map((z) => {
-              const id = String(z?._id || z?.id || "")
-              const label = z?.name || z?.zoneName || z?.serviceLocation || id
-              return (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              )
-            })}
-          </select>
+          <Label className="text-xs text-gray-700">Delivery Radius (km)</Label>
+          <Input
+            type="number"
+            min={1}
+            max={20}
+            value={step1.deliveryRadiusKm ?? 5}
+            onChange={(e) => setStep1({ ...step1, deliveryRadiusKm: e.target.value })}
+            className="mt-1 bg-white text-sm"
+          />
           <p className="text-[11px] text-gray-500 mt-1">
-            Choose the service zone where your restaurant will be available.
+            Restaurant is visible to customers, and offers go to riders, only within this radius.
           </p>
         </div>
         <div>

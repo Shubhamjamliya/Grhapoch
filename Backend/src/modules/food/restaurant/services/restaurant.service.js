@@ -201,6 +201,13 @@ const toFiniteNumber = (value) => {
     return Number.isFinite(n) ? n : null;
 };
 
+const DEFAULT_DELIVERY_RADIUS_KM = 5;
+const normalizeDeliveryRadiusKm = (value, fallback = DEFAULT_DELIVERY_RADIUS_KM) => {
+    const n = toFiniteNumber(value);
+    if (n === null) return fallback;
+    return Math.min(20, Math.max(1, n));
+};
+
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const normalizeCuisine = (value) => String(value || '').trim().slice(0, 80);
@@ -396,6 +403,7 @@ export const registerRestaurant = async (payload, files) => {
         latitude,
         longitude,
         zoneId,
+        deliveryRadiusKm,
         cuisines,
         openingTime,
         closingTime,
@@ -524,6 +532,7 @@ export const registerRestaurant = async (payload, files) => {
             zoneId: zoneId && mongoose.Types.ObjectId.isValid(String(zoneId).trim())
                 ? new mongoose.Types.ObjectId(String(zoneId).trim())
                 : undefined,
+            deliveryRadiusKm: normalizeDeliveryRadiusKm(deliveryRadiusKm),
             // Store unified location object (geo + address).
             location: {
                 type: 'Point',
@@ -941,6 +950,10 @@ export const updateRestaurantProfile = async (restaurantId, body = {}) => {
             update.zoneId = newZoneId;
             update.previousZoneId = currentRestaurant.zoneId;
         }
+    }
+
+    if (body.deliveryRadiusKm !== undefined) {
+        update.deliveryRadiusKm = normalizeDeliveryRadiusKm(body.deliveryRadiusKm, currentRestaurant.deliveryRadiusKm);
     }
 
     // Bank + UPI fields (Explore -> Update Bank Details page)
@@ -1603,8 +1616,20 @@ export const listApprovedRestaurants = async (query = {}) => {
             }
         ];
 
+        // Visible to this customer only if they're within the restaurant's own delivery radius,
+        // not just the (larger) search radius used for $geoNear above.
+        const withinOwnRadiusMatch = {
+            $expr: {
+                $lte: [
+                    '$distanceMeters',
+                    { $multiply: [{ $ifNull: ['$deliveryRadiusKm', DEFAULT_DELIVERY_RADIUS_KM] }, 1000] }
+                ]
+            }
+        };
+
         const basePipeline = [
             geoNear,
+            { $match: withinOwnRadiusMatch },
             ...(zoneFilterMatch ? [{ $match: zoneFilterMatch }] : []),
             ...lookupStages,
             {

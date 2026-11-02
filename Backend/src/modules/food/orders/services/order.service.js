@@ -137,7 +137,7 @@ export async function calculateOrder(userId, dto) {
 // ----- Create order -----
 export async function createOrder(userId, dto) {
   const restaurant = await FoodRestaurant.findById(dto.restaurantId)
-    .select("status restaurantName zoneId location isAcceptingOrders isActive openingTime closingTime openDays deliveryTimings")
+    .select("status restaurantName zoneId location deliveryRadiusKm isAcceptingOrders isActive openingTime closingTime openDays deliveryTimings")
     .lean();
   if (!restaurant) throw new ValidationError("Restaurant not found");
 
@@ -299,6 +299,18 @@ export async function createOrder(userId, dto) {
     console.warn(
       `Food order: distance not available, rider earning set to 0`,
     );
+  }
+
+  // Re-validate deliverability server-side: a stale client view (restaurant list
+  // fetched before radius changed, or before the customer moved address) must not
+  // be able to place an order outside the restaurant's delivery radius.
+  if (distanceKm !== null) {
+    const allowedRadiusKm = Number.isFinite(restaurant.deliveryRadiusKm) ? restaurant.deliveryRadiusKm : 5;
+    if (distanceKm > allowedRadiusKm) {
+      throw new ValidationError(
+        "This restaurant doesn't deliver to the selected address.",
+      );
+    }
   }
 
   let riderEarning = await getRiderEarning(distanceKm);

@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@food/components/ui/select"
-import { restaurantAPI, zoneAPI, uploadAPI, api } from "@food/api"
+import { restaurantAPI, uploadAPI, api } from "@food/api"
 import { TimePicker } from "@mui/x-date-pickers/TimePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"
@@ -263,29 +263,6 @@ const normalizeGST = (val) => String(val || "").toUpperCase().replace(/[^A-Z0-9]
 const normalizeBankAcc = (val) => String(val || "").replace(/\D/g, "").slice(0, 18)
 
 const getTodayLocalYMD = () => formatDateToLocalYMD(new Date())
-
-const findZoneForLocation = (lat, lng, zonesList) => {
-  if (!lat || !lng || !zonesList || !zonesList.length) return null;
-  const isPointInPolygon = (latitude, longitude, polygon) => {
-    let isInside = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      const xi = polygon[i].latitude, yi = polygon[i].longitude;
-      const xj = polygon[j].latitude, yj = polygon[j].longitude;
-      const intersect = ((yi > longitude) !== (yj > longitude)) &&
-          (latitude < (xj - xi) * (longitude - yi) / (yj - yi) + xi);
-      if (intersect) isInside = !isInside;
-    }
-    return isInside;
-  };
-  for (const zone of zonesList) {
-    if (zone.coordinates && zone.coordinates.length >= 3) {
-      if (isPointInPolygon(lat, lng, zone.coordinates)) {
-        return String(zone._id || zone.id);
-      }
-    }
-  }
-  return null;
-}
 
 // Helper functions for localStorage
 const saveOnboardingToLocalStorage = (step1, step2, step3, currentStep) => {
@@ -662,14 +639,7 @@ export default function RestaurantOnboarding() {
   const [isEditing, setIsEditing] = useState(true)
   const [hasExistingRestaurantProfile, setHasExistingRestaurantProfile] = useState(false)
   const [isFssaiCalendarOpen, setIsFssaiCalendarOpen] = useState(false)
-  const [zones, setZones] = useState([])
-  const zonesRef = useRef([])
-  const [zonesLoading, setZonesLoading] = useState(false)
   const [isOnboardingHydrated, setIsOnboardingHydrated] = useState(false)
-
-  useEffect(() => {
-    zonesRef.current = zones
-  }, [zones])
 
   const [step1, setStep1] = useState({
     restaurantName: "",
@@ -733,9 +703,6 @@ export default function RestaurantOnboarding() {
   const panImageInputRef = useRef(null)
   const gstImageInputRef = useRef(null)
   const fssaiImageInputRef = useRef(null)
-  const zoneDetectTimerRef = useRef(null)
-  const lastZoneDetectKeyRef = useRef(null)
-  const lastOutOfZoneToastKeyRef = useRef(null)
   const [sourcePicker, setSourcePicker] = useState({
     isOpen: false,
     title: "",
@@ -752,17 +719,8 @@ export default function RestaurantOnboarding() {
   const googleMapsReadyRef = useRef(false)
 
   const handleLocationSelect = (parsed) => {
-    let matchedZoneId = "";
-    if (parsed.latitude && parsed.longitude && zonesRef.current.length > 0) {
-      matchedZoneId = findZoneForLocation(parsed.latitude, parsed.longitude, zonesRef.current) || "";
-      if (!matchedZoneId) {
-        toast.error("This address is not in our service zone. Please select a valid location.", { id: 'out-of-zone' });
-      }
-    }
-
     setStep1((prev) => ({
       ...prev,
-      zoneId: matchedZoneId || prev.zoneId,
       location: {
         ...prev.location,
         formattedAddress: parsed.formattedAddress || prev.location.formattedAddress,
@@ -1009,23 +967,6 @@ export default function RestaurantOnboarding() {
     }
   }, [searchParams])
 
-  // Separate effect for background zone fetching to prevent UI blocking
-  useEffect(() => {
-    const fetchZones = async () => {
-      try {
-        setZonesLoading(true)
-        const zoneRes = await zoneAPI.getPublicZones()
-        if (zoneRes.data?.success) {
-          setZones(zoneRes.data.data?.zones || zoneRes.data.data || [])
-        }
-      } catch (zErr) {
-        debugError("Failed to fetch zones:", zErr)
-      } finally {
-        setZonesLoading(false)
-      }
-    }
-    fetchZones()
-  }, [])
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -1347,9 +1288,6 @@ export default function RestaurantOnboarding() {
       errors.push("Primary contact number is required")
     } else if (!/^\d{10}$/.test(normalizePhoneDigits(step1.primaryContactNumber))) {
        errors.push("Primary contact number must be exactly 10 digits")
-    }
-    if (!step1.zoneId?.trim()) {
-      errors.push("Service zone is required")
     }
     if (!step1.location?.area?.trim()) {
       errors.push("Area/Sector/Locality is required")
@@ -2050,29 +1988,6 @@ export default function RestaurantOnboarding() {
             Please ensure that this address is the same as mentioned on your FSSAI license.
           </p>
 
-          <div className="pt-2">
-            <Label className="text-xs text-gray-700">Service zone*</Label>
-            <select
-              value={step1.zoneId || ""}
-              onChange={(e) => setStep1({ ...step1, zoneId: e.target.value })}
-              className="mt-1 w-full h-9 rounded-md border border-input bg-white px-3 text-sm disabled:opacity-50"
-              disabled={zonesLoading || !isEditing || !!step1.location?.latitude}
-            >
-              <option value="">{zonesLoading ? "Loading zones..." : "Select a zone"}</option>
-              {zones.map((z) => {
-                const id = String(z?._id || z?.id || "")
-                const label = z?.name || z?.zoneName || z?.serviceLocation || id
-                return (
-                  <option key={id} value={id}>
-                    {label}
-                  </option>
-                )
-              })}
-            </select>
-            <p className="text-[11px] text-gray-500 mt-1">
-              Choose the service zone where your restaurant will be available.
-            </p>
-          </div>
         </div>
       </section>
     </div>
@@ -2204,75 +2119,6 @@ export default function RestaurantOnboarding() {
     return () => clearTimeout(t)
   }, [locationSearchValue, step])
 
-
-
-  useEffect(() => {
-    if (step !== 1) return
-
-    const lat = Number(step1.location?.latitude)
-    const lng = Number(step1.location?.longitude)
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
-
-    const key = `${lat.toFixed(5)},${lng.toFixed(5)}`
-    if (lastZoneDetectKeyRef.current === key) return
-
-    if (zoneDetectTimerRef.current) {
-      clearTimeout(zoneDetectTimerRef.current)
-    }
-
-    zoneDetectTimerRef.current = setTimeout(async () => {
-      lastZoneDetectKeyRef.current = key
-      try {
-        const res = await zoneAPI.detectZone(lat, lng)
-        const payload = res?.data?.data
-
-        if (res?.data?.success && payload) {
-          if (payload.status === "IN_SERVICE" && payload.zoneId) {
-            setStep1((prev) =>
-              prev.zoneId === payload.zoneId ? prev : { ...prev, zoneId: payload.zoneId },
-            )
-            lastOutOfZoneToastKeyRef.current = null
-          } else {
-            if (lastOutOfZoneToastKeyRef.current !== key) {
-              if (justSelectedRef.current) {
-                toast.error("Selected location is outside all service zones")
-              }
-              lastOutOfZoneToastKeyRef.current = key
-            }
-            setStep1((prev) => (prev.zoneId ? { ...prev, zoneId: "" } : prev))
-          }
-        }
-      } catch (err) {
-        debugError("Zone detect failed:", err)
-      }
-    }, 350)
-
-    return () => {
-      if (zoneDetectTimerRef.current) {
-        clearTimeout(zoneDetectTimerRef.current)
-        zoneDetectTimerRef.current = null
-      }
-    }
-  }, [step, step1.location?.latitude, step1.location?.longitude])
-
-  // Load zones for onboarding dropdown (public endpoint).
-  useEffect(() => {
-    if (step !== 1) return
-    let cancelled = false
-    setZonesLoading(true)
-    zoneAPI.getPublicZones()
-      .then((res) => {
-        const list = res?.data?.data?.zones || res?.data?.zones || []
-        if (!cancelled) setZones(Array.isArray(list) ? list : [])
-      })
-      .catch(() => {
-        if (!cancelled) setZones([])
-      })
-      .finally(() => {
-        if (!cancelled) setZonesLoading(false)
-      })
-    return () => { cancelled = true }
-  }, [step])
 
 
   const renderStep2 = () => (
