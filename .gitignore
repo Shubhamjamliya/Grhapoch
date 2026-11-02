@@ -4,3 +4,5 @@ temp_interactive_push.bat
 backups/
 *.dump
 
+config.bat
+node_modules
