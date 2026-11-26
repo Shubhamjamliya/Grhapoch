@@ -303,15 +303,15 @@ export const useDeliveryNotifications = () => {
         audioRef.current.volume = 0.9;
       }
 
-      // audioRef.current.muted = false;
-      // audioRef.current.volume = 0.9;
-      // audioRef.current.currentTime = 0;
-      // audioRef.current.play().catch(error => {
-      //   // On strict autoplay environments, vibration/native bridge path stays active.
-      //   if (!error.message?.includes('user didn\'t interact') && !error.name?.includes('NotAllowedError')) {
-      //     debugWarn('Error playing notification sound:', error);
-      //   }
-      // });
+      audioRef.current.muted = false;
+      audioRef.current.volume = 0.9;
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(error => {
+        // Blocked until the rider taps the screen once (autoplay policy); vibration still fires.
+        if (!error.message?.includes('user didn\'t interact') && !error.name?.includes('NotAllowedError')) {
+          debugWarn('Error playing notification sound:', error);
+        }
+      });
     } catch (error) {
       if (!error.message?.includes('user didn\'t interact') && !error.name?.includes('NotAllowedError')) {
         debugWarn('Error playing sound:', error);
@@ -585,11 +585,30 @@ export const useDeliveryNotifications = () => {
     };
   }, [recoverDeliveryState]);
 
-  // Track user interaction — mark gesture only; never play alert.mp3 during unlock (iOS leak)
+  // Unlock audio on the first tap/key press. Mobile browsers and WebViews block audio.play()
+  // that isn't started by a user gesture, so play the alert once while MUTED (silent, no iOS
+  // leak) during the gesture; later new-order alerts can then ring without a tap.
   useEffect(() => {
     const handleUserInteraction = async () => {
       userInteractedRef.current = true;
       audioUnlockAttemptedRef.current = true;
+
+      if (!audioRef.current) {
+        audioRef.current = new Audio(resolveAudioSource(alertSound));
+        audioRef.current.preload = 'auto';
+        audioRef.current.volume = 0.9;
+      }
+      const audio = audioRef.current;
+      try {
+        audio.muted = true;
+        await audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+        // Best effort.
+      } finally {
+        audio.muted = false;
+      }
 
       document.removeEventListener('click', handleUserInteraction);
       document.removeEventListener('touchstart', handleUserInteraction);

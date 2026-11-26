@@ -6,3 +6,6 @@ backups/
 
 config.bat
 node_modules
+
+# Firebase service account keys (secrets)
+*firebase-adminsdk*.json

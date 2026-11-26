@@ -5,6 +5,7 @@ import AuthRedirect from "@food/components/AuthRedirect"
 import Loader from "@food/components/Loader"
 import AuthInitializer from "@food/components/AuthInitializer"
 import PushSoundEnableButton from "@food/components/PushSoundEnableButton"
+import OrderSoundUnlockBar from "@food/components/OrderSoundUnlockBar"
 import { registerWebPushForCurrentModule } from "@food/utils/firebaseMessaging"
 
 // Lazy Loading Components
@@ -70,6 +71,7 @@ export default function App() {
       <>
         <ScrollToTop />
         <PushSoundEnableButton />
+        <OrderSoundUnlockBar />
         <Suspense fallback={<Loader />}>
           <Routes>
             {/* Restaurant Module - Already mapped to /restaurant */}
