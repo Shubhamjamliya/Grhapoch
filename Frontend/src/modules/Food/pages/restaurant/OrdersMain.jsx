@@ -43,7 +43,6 @@ const debugWarn = (...args) => { };
 const debugError = (...args) => { };
 
 const STORAGE_KEY = "restaurant_online_status";
-const DESKTOP_ORDER_ALERT_QUERY = "(min-width: 768px)";
 
 // Top filter tabs
 const filterTabs = [
@@ -1191,11 +1190,6 @@ export default function OrdersMain() {
   const [showNewOrderPopup, setShowNewOrderPopup] = useState(false);
   const [popupOrder, setPopupOrder] = useState(null); // Store order for popup (from Socket.IO or API)
   const [isMuted, setIsMuted] = useState(false);
-  const [isDesktopView, setIsDesktopView] = useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia(DESKTOP_ORDER_ALERT_QUERY).matches
-      : false,
-  );
   const [prepTime, setPrepTime] = useState(11);
   const [countdown, setCountdown] = useState(180); // 3 minutes in seconds
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(true);
@@ -1219,7 +1213,6 @@ export default function OrdersMain() {
   });
   const [isReverifying, setIsReverifying] = useState(false);
   const audioUnlockedRef = useRef(false);
-  const isDesktopViewRef = useRef(isDesktopView);
   const showNewOrderPopupRef = useRef(showNewOrderPopup);
   useEffect(() => {
     showNewOrderPopupRef.current = showNewOrderPopup;
@@ -1668,10 +1661,6 @@ export default function OrdersMain() {
   }, [isMuted]);
 
   useEffect(() => {
-    isDesktopViewRef.current = isDesktopView;
-  }, [isDesktopView]);
-
-  useEffect(() => {
     newOrderRef.current = newOrder;
   }, [newOrder]);
 
@@ -1682,14 +1671,7 @@ export default function OrdersMain() {
       audioRef.current.preload = "auto";
     }
 
-    const desktopMediaQuery = window.matchMedia(DESKTOP_ORDER_ALERT_QUERY);
-    const handleDesktopViewChange = (event) => setIsDesktopView(event.matches);
-
-    setIsDesktopView(desktopMediaQuery.matches);
-    desktopMediaQuery.addEventListener("change", handleDesktopViewChange);
-
     return () => {
-      desktopMediaQuery.removeEventListener("change", handleDesktopViewChange);
       stopPopupOrderSound();
     };
   }, []);
@@ -1710,7 +1692,6 @@ export default function OrdersMain() {
         // If an order popup is already open, start buzzing immediately after unlock.
         if (
           showNewOrderPopupRef.current &&
-          isDesktopViewRef.current &&
           !isMutedRef.current
         ) {
           audioRef.current.loop = true;
@@ -1822,10 +1803,10 @@ export default function OrdersMain() {
     return () => clearInterval(intervalId);
   }, [ordersRefreshToken]);
 
-  // Ring continuously for a new order on desktop only. Switching to a mobile
-  // viewport, accepting/rejecting the order, or unmounting stops the sound.
+  // Ring continuously for a new order on every screen size. Accepting/rejecting
+  // the order, muting, or unmounting stops the sound.
   useEffect(() => {
-    if (showNewOrderPopup && isDesktopView && !isMuted) {
+    if (showNewOrderPopup && !isMuted) {
       if (audioRef.current) {
         audioRef.current.loop = true;
         audioRef.current.muted = false;
@@ -1839,7 +1820,7 @@ export default function OrdersMain() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
-  }, [showNewOrderPopup, isDesktopView, isMuted]);
+  }, [showNewOrderPopup, isMuted]);
 
   useEffect(() => {
     if (showNewOrderPopup && countdown > 0) {

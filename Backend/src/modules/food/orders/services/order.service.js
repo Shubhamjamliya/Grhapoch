@@ -376,6 +376,9 @@ export async function createOrder(userId, dto) {
     riderEarning,
     deliveryBonusAmount,
     platformProfit,
+    // Generate the handover OTP up front so the customer sees it on the tracking page
+    // immediately, instead of waiting until the rider marks "reached drop".
+    deliveryOtp: generateFourDigitDeliveryOtp(),
   });
 
   let razorpayPayload = null;
@@ -763,13 +766,11 @@ export async function getDropOtpUser(orderId, userId) {
   }).select("+deliveryOtp");
   if (!order) throw new NotFoundError("Order not found");
 
-  const phase = order.deliveryState?.currentPhase;
-  const isEligible = phase === "at_drop";
+  // OTP is generated at order creation, so it is available for the whole life of an active order.
+  const isFinished = ["delivered", "cancelled_by_user", "cancelled_by_restaurant", "cancelled_by_admin", "dead"].includes(order.orderStatus);
 
-  if (!isEligible) {
-    throw new ValidationError(
-      "OTP will appear once the delivery partner requests it at your location."
-    );
+  if (isFinished) {
+    throw new ValidationError("This order is no longer active.");
   }
 
   if (!String(order.deliveryOtp || "").trim()) {

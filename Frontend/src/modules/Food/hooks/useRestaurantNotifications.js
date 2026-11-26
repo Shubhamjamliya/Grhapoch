@@ -861,11 +861,27 @@ export const useRestaurantNotifications = () => {
     };
   }, [restaurantId]);
 
-  // Prime audio gesture silently on first interaction (no alert.mp3 on iOS unlock)
+  // Unlock audio silently on the first tap/key press. Mobile browsers block audio.play()
+  // that isn't started by a user gesture, so play the ring once muted while we have one;
+  // later new-order rings can then play without a gesture.
   useEffect(() => {
     const handleUserInteraction = async () => {
       userInteractedRef.current = true;
       audioUnlockAttemptedRef.current = true;
+
+      const audio = audioRef.current;
+      if (audio) {
+        try {
+          audio.muted = true;
+          await audio.play();
+          audio.pause();
+          audio.currentTime = 0;
+        } catch {
+          // Ignore: unlock is best effort.
+        } finally {
+          audio.muted = false;
+        }
+      }
 
       document.removeEventListener('click', handleUserInteraction);
       document.removeEventListener('touchstart', handleUserInteraction);
@@ -906,9 +922,8 @@ export const useRestaurantNotifications = () => {
         return;
       }
 
-      const isDesktopView = typeof window !== 'undefined' &&
-        window.matchMedia('(min-width: 768px)').matches;
-      if (!isDesktopView || !audioRef.current) return;
+      // Ring on every screen size (mobile web / WebView included), not just desktop.
+      if (!audioRef.current) return;
 
       audioRef.current.muted = false;
       audioRef.current.volume = 1;
