@@ -58,20 +58,11 @@ const triggerWebViewNativeNotification = async (orderData = {}) => {
       window.flutter_inappwebview &&
       typeof window.flutter_inappwebview.callHandler === 'function'
     ) {
-      const handlerNames = [
-        'playNotificationSound',
-        'triggerNotificationFeedback',
-        'onPushNotification',
-      ];
-
-      for (const handlerName of handlerNames) {
-        try {
-          await window.flutter_inappwebview.callHandler(handlerName, bridgePayload);
-          return true;
-        } catch {
-          // Try next handler name.
-        }
-      }
+      // The Flutter app plays the ring natively (no tap needed). Only treat it as handled when
+      // the app explicitly answers true / { played: true }; an app without this handler
+      // resolves null, and we fall back to web audio.
+      const result = await window.flutter_inappwebview.callHandler('playNotificationSound', bridgePayload);
+      return result === true || result?.played === true;
     }
   } catch {
     // Ignore bridge failures and fall back to browser/web audio.
@@ -904,9 +895,8 @@ export const useRestaurantNotifications = () => {
 
   const playNotificationSound = async (orderData = {}) => {
     try {
-      // Temporarily disabled native bridge sound trigger
-      // const usedNativeBridge = await triggerWebViewNativeNotification(orderData);
-      const usedNativeBridge = false;
+      // Inside the Flutter app, ask it to ring natively (works without any tap).
+      const usedNativeBridge = await triggerWebViewNativeNotification(orderData);
       if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
         try {
           if (navigator.userActivation && !navigator.userActivation.hasBeenActive) {
