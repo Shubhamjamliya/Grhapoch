@@ -135,9 +135,10 @@ export async function notifyOwnerSafely(target, payload) {
 
 export async function notifyOwnersUrgentlySafely(targets, payload) {
   try {
-    await sendUrgentOrderNotificationsToOwners(targets, payload);
+    return await sendUrgentOrderNotificationsToOwners(targets, payload);
   } catch (error) {
     logger.warn(`Urgent notification failed: ${error?.message || error}`);
+    return [];
   }
 }
 
@@ -422,7 +423,13 @@ export function canExposeOrderToRestaurant(orderLike) {
 
 export async function notifyRestaurantNewOrder(orderDoc) {
   try {
-    if (!orderDoc || !canExposeOrderToRestaurant(orderDoc)) return;
+    if (!orderDoc) return;
+    if (!canExposeOrderToRestaurant(orderDoc)) {
+      logger.info(
+        `[PUSH-ORDER] RESTAURANT:${orderDoc.restaurantId?.toString?.() || ""} order=${orderDoc._id?.toString?.() || ""} | NOT SENT YET: online payment not completed (method=${orderDoc.payment?.method || "n/a"} status=${orderDoc.payment?.status || "n/a"}). Restaurant is notified after payment succeeds.`,
+      );
+      return;
+    }
 
     const io = getIO();
     if (io) {
@@ -460,8 +467,11 @@ export async function notifyRestaurantNewOrder(orderDoc) {
     );
     const { scheduleRestaurantResponseDelayAlert } = await import('../../admin/services/restaurantDelayAlert.service.js');
     await scheduleRestaurantResponseDelayAlert(orderDoc);
-  } catch {
-    // Do not block order/payment flow if notification fails.
+  } catch (error) {
+    // Do not block order/payment flow if notification fails, but say why.
+    logger.error(
+      `[PUSH-ORDER] RESTAURANT:${orderDoc?.restaurantId?.toString?.() || ""} order=${orderDoc?._id?.toString?.() || ""} | new-order notification crashed: ${error?.message || error}`,
+    );
   }
 }
 

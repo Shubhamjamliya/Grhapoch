@@ -377,7 +377,13 @@ export async function tryAutoAssign(orderId, options = {}) {
           },
         },
       );
-      logger.info(`[FCM-Dispatch] new_order push results for order ${order._id}: ${JSON.stringify(fcmResults?.map?.(r => ({ success: r?.successCount, fail: r?.failureCount })) || 'void')}`);
+      // Per-rider detail (tokens, FCM errors, missing app token) is logged under [PUSH-ORDER].
+      logger.info(`[FCM-Dispatch] new_order push results for order ${order._id}: ${JSON.stringify(fcmResults?.map?.((r, i) => ({
+        rider: String(notifyList[i]?.ownerId || ''),
+        fcmOk: r?.fcm?.successCount ?? 0,
+        fcmFailed: r?.fcm?.failureCount ?? 0,
+        voipOk: r?.voip?.successCount ?? 0,
+      })) || 'void')}`);
     } catch (err) {
       logger.warn(`Push notifications failed for batch: ${err.message}`);
     }

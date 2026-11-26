@@ -161,7 +161,7 @@ export const listOwnerUrgentPushTargets = async ({ ownerType, ownerId } = {}) =>
     if (!model) return { iosVoipTokens: [], fcmTokens: [] };
 
     const doc = await model.findById(ownerId).select('pushDevices fcmTokens fcmTokenMobile').lean();
-    if (!doc) return { iosVoipTokens: [], fcmTokens: [] };
+    if (!doc) return { iosVoipTokens: [], fcmTokens: [], ownerFound: false };
 
     const pushDevices = parsePushDevices(doc);
     const iosVoipTokens = normalizeTokenList(
@@ -195,11 +195,23 @@ export const listOwnerUrgentPushTargets = async ({ ownerType, ownerId } = {}) =>
 
     logger.info(`[VoIP-Trace] Fetched DB tokens for ${ownerType}:${ownerId} -> VoIP(iOS): ${iosVoipTokens.length}, FCM(iOS): ${iosFcmTokens.length}, FCM(Android): ${allAndroidFcmTokens.length}`);
 
+    // Split by origin for diagnostics: browser (web push) vs native app (Flutter).
+    const webTokens = normalizeTokenList(Array.isArray(doc.fcmTokens) ? doc.fcmTokens : []);
+    const appTokens = normalizeTokenList([
+        ...(Array.isArray(doc.fcmTokenMobile) ? doc.fcmTokenMobile : []),
+        ...pushDevices
+            .filter((device) => device?.pushPlatform === 'mobile' && device?.fcmToken)
+            .map((device) => device?.fcmToken),
+    ]);
+
     return {
+        ownerFound: true,
         iosVoipTokens,
         iosFcmTokens,
         androidFcmTokens: allAndroidFcmTokens,
         fcmTokens: allAndroidFcmTokens,
+        webTokens,
+        appTokens,
     };
 };
 
@@ -321,30 +333,106 @@ export const sendVoipNotificationToOwner = async ({ ownerType, ownerId, payload 
     };
 };
 
+const PUSH_LOG = '[PUSH-ORDER]';
+const tokenTail = (token) => `...${String(token || '').slice(-8)}`;
+
+// Plain-English hints for the FCM errors that explain "push sent but nothing arrived".
+const explainFcmError = (message = '') => {
+    const m = String(message).toUpperCase();
+    if (m.includes('UNREGISTERED') || m.includes('NOT_FOUND') || m.includes('REQUESTED ENTITY WAS NOT FOUND')) {
+        return 'token is dead (app uninstalled, data cleared, or token refreshed) - the app must register a fresh token';
+    }
+    if (m.includes('SENDER_ID_MISMATCH') || m.includes('SENDERID MISMATCH')) {
+        return 'the app was built with a DIFFERENT Firebase project than the server credentials';
+    }
+    if (m.includes('THIRD_PARTY_AUTH_ERROR')) {
+        return 'APNs key/certificate missing or invalid in Firebase console (iOS)';
+    }
+    if (m.includes('INVALID_ARGUMENT')) {
+        return 'invalid token format or invalid message payload';
+    }
+    if (m.includes('QUOTA_EXCEEDED')) return 'FCM rate limit hit';
+    if (m.includes('UNAVAILABLE') || m.includes('INTERNAL')) return 'temporary FCM outage, retry later';
+    return 'see FCM error above';
+};
+
 export const sendUrgentOrderNotificationToOwner = async ({ ownerType, ownerId, payload } = {}) => {
-    const { iosVoipTokens, iosFcmTokens, androidFcmTokens, fcmTokens } = await listOwnerUrgentPushTargets({ ownerType, ownerId });
+    const {
+        iosVoipTokens = [],
+        iosFcmTokens = [],
+        androidFcmTokens,
+        fcmTokens,
+        ownerFound,
+        webTokens = [],
+        appTokens = [],
+    } = await listOwnerUrgentPushTargets({ ownerType, ownerId });
     const responses = {
         voip: { successCount: 0, failureCount: 0, results: [] },
         iosFcm: { successCount: 0, failureCount: 0, results: [] },
         fcm: { successCount: 0, failureCount: 0, results: [] },
     };
 
-    logger.info(`[VoIP-Trace] Initiating Urgent Push for ${ownerType}:${ownerId}`);
+    const who = `${ownerType}:${ownerId}`;
+    const ctx = `event=${payload?.data?.type || payload?.type || 'n/a'} order=${payload?.data?.orderId || payload?.orderId || 'n/a'}`;
+
+    logger.info(`[VoIP-Trace] Initiating Urgent Push for ${who}`);
+    logger.info(
+        `${PUSH_LOG} ${who} ${ctx} | registered tokens: app(Flutter)=${appTokens.length} web(browser)=${webTokens.length} iosVoip=${iosVoipTokens.length} iosFcm=${iosFcmTokens.length}`
+    );
+
+    if (ownerFound === false) {
+        logger.warn(`${PUSH_LOG} ${who} ${ctx} | NOT SENT: account not found in database.`);
+        return responses;
+    }
+
+    if (appTokens.length === 0) {
+        logger.warn(
+            `${PUSH_LOG} ${who} ${ctx} | NO APP TOKEN: the Flutter app has never registered a push token for this account, so the APP CANNOT receive this notification (browser may still get it). ` +
+            `Fix in the app: the WebView JS handler "getFcmToken" must return the Firebase token, then open the app while logged in.`
+        );
+    }
+
+    const standardFcmTokens = androidFcmTokens && androidFcmTokens.length > 0 ? androidFcmTokens : fcmTokens;
+    const skippedIosFcm = iosFcmTokens.filter((t) => !(standardFcmTokens || []).includes(t));
+    if (skippedIosFcm.length > 0 && iosVoipTokens.length === 0) {
+        logger.warn(
+            `${PUSH_LOG} ${who} ${ctx} | ${skippedIosFcm.length} iPhone FCM token(s) are NOT used by the urgent path and no VoIP token exists - iPhone app gets nothing.`
+        );
+    }
+
+    if (iosVoipTokens.length === 0 && (!standardFcmTokens || standardFcmTokens.length === 0)) {
+        logger.warn(`${PUSH_LOG} ${who} ${ctx} | NOT SENT: no push tokens at all for this account (neither app nor browser registered).`);
+        return responses;
+    }
 
     if (iosVoipTokens.length > 0) {
         try {
             responses.voip = await sendVoipPushNotification(iosVoipTokens, payload, { ownerType });
         } catch (error) {
-            logger.warn(`VoIP push failed for ${ownerType}:${ownerId} - ${error?.message || error}`);
+            logger.warn(`VoIP push failed for ${who} - ${error?.message || error}`);
+            logger.warn(`${PUSH_LOG} ${who} ${ctx} | VoIP send crashed: ${error?.message || error} (check APNS_* env config).`);
         }
     }
 
-    const standardFcmTokens = androidFcmTokens && androidFcmTokens.length > 0 ? androidFcmTokens : fcmTokens;
     if (standardFcmTokens && standardFcmTokens.length > 0) {
         try {
             responses.fcm = await sendPushNotification(standardFcmTokens, payload);
+            for (const result of responses.fcm.results || []) {
+                const source = appTokens.includes(result.token) ? 'app' : webTokens.includes(result.token) ? 'web' : 'unknown';
+                if (result.ok) {
+                    logger.info(`${PUSH_LOG} ${who} ${ctx} | FCM OK -> ${source} token ${tokenTail(result.token)} (accepted by Firebase; if nothing shows on the device, the device/app side is not displaying it)`);
+                } else {
+                    logger.warn(
+                        `${PUSH_LOG} ${who} ${ctx} | FCM FAILED -> ${source} token ${tokenTail(result.token)}: ${result.error} => ${explainFcmError(result.error)}`
+                    );
+                }
+            }
+            logger.info(`${PUSH_LOG} ${who} ${ctx} | FCM summary: ok=${responses.fcm.successCount} failed=${responses.fcm.failureCount}`);
         } catch (error) {
-            logger.warn(`Android FCM fallback failed for ${ownerType}:${ownerId} - ${error?.message || error}`);
+            logger.warn(`Android FCM fallback failed for ${who} - ${error?.message || error}`);
+            logger.error(
+                `${PUSH_LOG} ${who} ${ctx} | FCM NOT SENT: ${error?.message || error} (usually missing/invalid Firebase service-account credentials or project id on the server).`
+            );
         }
     }
 

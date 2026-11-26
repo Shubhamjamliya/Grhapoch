@@ -878,7 +878,9 @@ export async function registerWebPushForCurrentModule(pathname = window.location
 
   initPushNotificationClient();
 
-  const supportsBrowserPush = isSupportedBrowser() && isSecureContextForPush();
+  // Inside the Flutter app, web push never reaches the device (no service-worker push in a
+  // WebView), so always register the app's native FCM token instead.
+  const supportsBrowserPush = !isFlutterWebView() && isSupportedBrowser() && isSecureContextForPush();
 
   if (supportsBrowserPush) {
     if (registrationInFlight) return registrationInFlight;
