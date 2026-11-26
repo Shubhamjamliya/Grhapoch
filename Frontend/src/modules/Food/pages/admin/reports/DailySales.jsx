@@ -13,7 +13,7 @@ import {
   AlertCircle,
   Banknote,
   CreditCard,
-  DollarSign,
+  IndianRupee,
   ArrowUpRight,
   ChevronDown,
   ChevronUp,

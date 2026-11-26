@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ShieldCheck, DollarSign, CheckCircle2,
+  ShieldCheck, IndianRupee, CheckCircle2,
   QrCode, Loader2, X, Package, RefreshCw
 } from 'lucide-react';
 import { deliveryAPI } from '@food/api';
@@ -366,7 +366,7 @@ const OtpModal = ({ order, onVerified, onClose }) => {
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isPaid ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
-                    <DollarSign className="w-7 h-7" />
+                    <IndianRupee className="w-7 h-7" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">{isPaid ? "Payment Verified" : "Collect Payment"}</h2>
@@ -399,7 +399,7 @@ const OtpModal = ({ order, onVerified, onClose }) => {
                       {isCompletingCash ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <DollarSign className="w-5 h-5" />
+                        <IndianRupee className="w-5 h-5" />
                       )}
                       {isCompletingCash ? 'Recording Cash…' : 'Cash Collected'}
                     </button>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, TrendingUp, TrendingDown, DollarSign, ShoppingCart, XCircle, Star, Calendar, BarChart3, Users, Award, Package } from 'lucide-react'
+import { Search, TrendingUp, TrendingDown, IndianRupee, ShoppingCart, XCircle, Star, Calendar, BarChart3, Users, Award, Package } from 'lucide-react'
 import { adminAPI } from '@food/api'
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}

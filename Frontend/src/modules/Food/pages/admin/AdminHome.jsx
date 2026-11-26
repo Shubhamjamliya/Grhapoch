@@ -25,7 +25,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { Activity, ArrowUpRight, ShoppingBag, CreditCard, Truck, Receipt, DollarSign, Store, UserCheck, Package, UserCircle, Clock, CheckCircle, Plus, XCircle } from "lucide-react"
+import { Activity, ArrowUpRight, ShoppingBag, CreditCard, Truck, Receipt, IndianRupee, Store, UserCheck, Package, UserCircle, Clock, CheckCircle, Plus, XCircle } from "lucide-react"
 import { adminAPI } from "@food/api"
 const debugLog = () => {}
 const debugError = () => {}
@@ -283,7 +283,7 @@ export default function AdminHome() {
                 title="Platform Total"
                 value={formatCurrency(platformTotal, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 helper={totalRevenueHelper}
-                icon={<DollarSign className="h-5 w-5 text-emerald-600" />}
+                icon={<IndianRupee className="h-5 w-5 text-emerald-600" />}
                 accent="bg-emerald-200/50 border border-emerald-300/50"
                 path="/admin/food/transaction-report"
               />

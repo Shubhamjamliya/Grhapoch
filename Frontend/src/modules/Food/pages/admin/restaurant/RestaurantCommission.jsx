@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { 
   Search, Plus, Edit, Trash2, ArrowUpDown, 
-  DollarSign, Percent, Loader2, X, Building2, IndianRupee
+  Percent, Loader2, X, Building2, IndianRupee
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@food/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@food/components/ui/dropdown-menu"
@@ -633,7 +633,7 @@ export default function RestaurantCommission() {
                                 {item.defaultCommission?.type === 'percentage' ? (
                                   <>{item.defaultCommission.value}%</>
                                 ) : (
-                                  <>${item.defaultCommission.value}</>
+                                  <>₹{item.defaultCommission.value}</>
                                 )}
                               </span>
                               <span className={`text-[10px] font-semibold mt-0.5 px-1.5 py-0.5 rounded-sm inline-block w-fit ${item.hasCustomCommission ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>

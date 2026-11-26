@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react"
-import { Search, Download, ChevronDown, Filter, Calendar, ClipboardList, DollarSign, FileText, AlertCircle, Settings, FileSpreadsheet, Code } from "lucide-react"
+import { Search, Download, ChevronDown, Filter, Calendar, ClipboardList, IndianRupee, FileText, AlertCircle, Settings, FileSpreadsheet, Code } from "lucide-react"
 import { emptyRestaurantVATReports, emptyRestaurantVATStats } from "@food/utils/adminFallbackData"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@food/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@food/components/ui/dialog"
@@ -167,7 +167,7 @@ export default function RestaurantVATReport() {
                 <p className="text-lg font-semibold text-green-600 mt-1">{emptyRestaurantVATStats.totalOrderAmount}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                <DollarSign className="w-7 h-7 text-yellow-600" />
+                <IndianRupee className="w-7 h-7 text-yellow-600" />
               </div>
             </div>
           </div>

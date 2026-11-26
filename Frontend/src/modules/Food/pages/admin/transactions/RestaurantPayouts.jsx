@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { Download, DollarSign, Building, FileText, CheckCircle, Loader2, CreditCard, ChevronLeft, ChevronRight, Banknote } from "lucide-react"
+import { Download, IndianRupee, Building, FileText, CheckCircle, Loader2, CreditCard, ChevronLeft, ChevronRight, Banknote } from "lucide-react"
 import { adminAPI } from "@food/api"
 import { toast } from "sonner"
 import { generatePayoutPDF } from "@food/utils/payoutPdfGenerator"
@@ -213,7 +213,7 @@ export default function RestaurantPayouts() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-blue-50 rounded-xl">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+              <IndianRupee className="w-6 h-6 text-blue-600" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Restaurant Payouts</h1>
@@ -328,7 +328,7 @@ export default function RestaurantPayouts() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider">Total Revenue</span>
-              <DollarSign className="w-4 h-4 text-slate-400" />
+              <IndianRupee className="w-4 h-4 text-slate-400" />
             </div>
             {loadingSummary ? (
               <Loader2 className="w-5 h-5 animate-spin text-blue-600 my-1" />

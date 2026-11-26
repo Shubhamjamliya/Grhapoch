@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Download, ChevronDown, FileText, DollarSign, Settings, FileSpreadsheet, Code, Loader2 } from "lucide-react"
+import { Download, ChevronDown, FileText, IndianRupee, Settings, FileSpreadsheet, Code, Loader2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@food/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@food/components/ui/dialog"
 import { exportReportsToCSV, exportReportsToExcel, exportReportsToPDF, exportReportsToJSON } from "@food/components/admin/reports/reportsExportUtils"
@@ -266,7 +266,7 @@ export default function TaxReport() {
                 <p className="text-2xl font-bold text-blue-600">{stats.totalIncome}</p>
               </div>
               <div className="w-14 h-14 rounded-lg bg-yellow-100 flex items-center justify-center">
-                <DollarSign className="w-8 h-8 text-yellow-600" />
+                <IndianRupee className="w-8 h-8 text-yellow-600" />
               </div>
             </div>
           </div>

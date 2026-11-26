@@ -13,7 +13,7 @@ import {
   CheckCircle, 
   XCircle, 
   Clock, 
-  DollarSign, 
+  IndianRupee, 
   RefreshCw, 
   User, 
   Package, 
@@ -450,7 +450,7 @@ export default function EarningAddonHistory() {
                         {visibleColumns.earningAmount && (
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4 text-emerald-500" />
+                              <IndianRupee className="w-4 h-4 text-emerald-500" />
                               <span className="text-sm font-medium text-slate-900">{"\u20B9"}{item.totalEarning?.toFixed(2) || item.earningAmount?.toFixed(2) || '0.00'}</span>
                             </div>
                           </td>
@@ -556,7 +556,7 @@ export default function EarningAddonHistory() {
                 {/* Amount Info - Highlighted */}
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border-2 border-emerald-200">
                   <div className="p-2 bg-emerald-100 rounded-lg">
-                    <DollarSign className="w-5 h-5 text-emerald-600" />
+                    <IndianRupee className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div className="flex-1">
                     <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide mb-1">Amount to Credit</p>
