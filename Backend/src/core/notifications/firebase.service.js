@@ -471,8 +471,15 @@ export const removeOwnerPushDevice = async ({ ownerType, ownerId, fcmToken, voip
 
 export const sendPushNotification = async (tokens, payload = {}) => {
     const projectId = getFirebaseProjectId();
-    const accessToken = await getFirebaseAccessToken();
+    let accessToken;
+    try {
+        accessToken = await getFirebaseAccessToken();
+    } catch (error) {
+        logger.error(`[FCM-SEND] project=${projectId} | cannot get Firebase access token (service account invalid or for another project): ${error?.message || error}`);
+        throw error;
+    }
     const uniqueTokens = normalizeTokenList(tokens);
+    logger.info(`[FCM-SEND] project=${projectId} | sending "${payload?.title || payload?.data?.type || 'notification'}" to ${uniqueTokens.length} token(s)`);
 
     if (uniqueTokens.length === 0) {
         return { successCount: 0, failureCount: 0, results: [] };

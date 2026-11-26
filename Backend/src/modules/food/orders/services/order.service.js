@@ -467,10 +467,17 @@ export async function createOrder(userId, dto) {
     // call notifyRestaurantNewOrder() AFTER payment is confirmed — preventing a
     // duplicate FCM push to the restaurant for the same order.
     if (!isAwaitingOnlinePayment) {
-      await notifyRestaurantNewOrder(order);
+      await notifyRestaurantNewOrder(order, `order-created(${paymentMethod})`);
+    } else {
+      logger.info(
+        `[NEW-ORDER-NOTIFY] order=${order._id} (#${order.order_id || "-"}) restaurant=${order.restaurantId} | WAITING for online payment; restaurant will be notified after payment is captured`,
+      );
     }
-  } catch {
-    // Don't block order placement on socket failures.
+  } catch (error) {
+    // Don't block order placement on notification failures, but log them.
+    logger.error(
+      `[NEW-ORDER-NOTIFY] order=${order._id} restaurant=${order.restaurantId} | order-created notifications crashed: ${error?.message || error}`,
+    );
   }
   const couponCode = dto.pricing?.couponCode
     ? String(dto.pricing.couponCode).trim().toUpperCase()
@@ -611,7 +618,7 @@ export async function afterOnlinePaymentCaptured(orderInput) {
     return;
   }
 
-  await notifyRestaurantNewOrder(order);
+  await notifyRestaurantNewOrder(order, "payment-captured");
 
   await notifyOwnersSafely([{ ownerType: "USER", ownerId: order.userId }], {
     title: "Payment Successful! ✅",

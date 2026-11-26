@@ -421,16 +421,34 @@ export function canExposeOrderToRestaurant(orderLike) {
   return ["paid", "authorized", "captured", "settled"].includes(status);
 }
 
-export async function notifyRestaurantNewOrder(orderDoc) {
+export async function notifyRestaurantNewOrder(orderDoc, source = "unknown") {
+  // Step-by-step trace of the restaurant new-order notification.
+  // grep "NEW-ORDER-NOTIFY" to see exactly where a notification stopped.
+  const orderKey = orderDoc?._id?.toString?.() || "n/a";
+  const restaurantKey = orderDoc?.restaurantId?.toString?.() || "n/a";
+  const tag = `[NEW-ORDER-NOTIFY] order=${orderKey} (#${orderDoc?.order_id || "-"}) restaurant=${restaurantKey}`;
+  const startedAt = Date.now();
+  let step = "start";
+
   try {
-    if (!orderDoc) return;
+    logger.info(`${tag} | 1/5 START source=${source} payment=${orderDoc?.payment?.method || "n/a"}/${orderDoc?.payment?.status || "n/a"} status=${orderDoc?.orderStatus || "n/a"}`);
+
+    if (!orderDoc) {
+      logger.warn(`${tag} | STOP: no order document passed`);
+      return;
+    }
+    if (!orderDoc.restaurantId) {
+      logger.warn(`${tag} | STOP: order has no restaurantId`);
+      return;
+    }
     if (!canExposeOrderToRestaurant(orderDoc)) {
       logger.info(
-        `[PUSH-ORDER] RESTAURANT:${orderDoc.restaurantId?.toString?.() || ""} order=${orderDoc._id?.toString?.() || ""} | NOT SENT YET: online payment not completed (method=${orderDoc.payment?.method || "n/a"} status=${orderDoc.payment?.status || "n/a"}). Restaurant is notified after payment succeeds.`,
+        `${tag} | STOP (expected): online payment not completed (method=${orderDoc.payment?.method || "n/a"} status=${orderDoc.payment?.status || "n/a"}). Restaurant is notified after payment succeeds.`,
       );
       return;
     }
 
+    step = "socket";
     const io = getIO();
     if (io) {
       const payload = {
@@ -438,22 +456,28 @@ export async function notifyRestaurantNewOrder(orderDoc) {
         orderMongoId: orderDoc._id?.toString?.() || undefined,
         orderId: orderDoc.order_id || orderDoc._id?.toString?.(),
       };
-      logger.info(
-        `[RestaurantOrders] Emitting new_order to ${rooms.restaurant(orderDoc.restaurantId)} for order ${orderDoc._id?.toString?.() || ''}`,
-      );
       io.to(rooms.restaurant(orderDoc.restaurantId)).emit("new_order", payload);
+      logger.info(`${tag} | 2/5 SOCKET new_order emitted to room ${rooms.restaurant(orderDoc.restaurantId)} (in-app popup if the panel is open)`);
+    } else {
+      logger.warn(`${tag} | 2/5 SOCKET SKIPPED: Socket.IO not available in this process - open panels will not get the live popup`);
     }
 
+    step = "tokens";
     const pushTargets = await listOwnerUrgentPushTargets({ ownerType: "RESTAURANT", ownerId: orderDoc.restaurantId });
-    if (String(process.env.PUSH_DEBUG || "").toLowerCase() === "true") {
-      logger.info(
-        `[PushDebug][RestaurantOrder] order=${orderDoc._id?.toString?.() || ""} restaurant=${orderDoc.restaurantId?.toString?.() || ""} voip=${pushTargets.iosVoipTokens?.length || 0} fcm=${pushTargets.fcmTokens?.length || 0} voipPreview=${pushTargets.iosVoipTokens?.[0] ? `${String(pushTargets.iosVoipTokens[0]).slice(0, 8)}...` : "none"} fcmPreview=${pushTargets.fcmTokens?.[0] ? `${String(pushTargets.fcmTokens[0]).slice(0, 8)}...` : "none"}`
-      );
+    logger.info(
+      `${tag} | 3/5 TOKENS found=${pushTargets.ownerFound !== false} app=${pushTargets.appTokens?.length || 0} web=${pushTargets.webTokens?.length || 0} fcmTotal=${pushTargets.fcmTokens?.length || 0} iosVoip=${pushTargets.iosVoipTokens?.length || 0}`,
+    );
+    if (pushTargets.ownerFound === false) {
+      logger.warn(`${tag} | STOP: restaurant ${restaurantKey} not found in database`);
+      return;
     }
 
-    await notifyOwnerUrgentlySafely(
-      { ownerType: "RESTAURANT", ownerId: orderDoc.restaurantId },
-      {
+    step = "push";
+    // Per-token Firebase results are logged by the send path under [PUSH-ORDER].
+    const pushResult = await sendUrgentOrderNotificationToOwner({
+      ownerType: "RESTAURANT",
+      ownerId: orderDoc.restaurantId,
+      payload: {
         title: "New order received",
         body: `Order #${orderDoc.order_id || orderDoc._id} is waiting for review.`,
         sound: "default",
@@ -464,14 +488,22 @@ export async function notifyRestaurantNewOrder(orderDoc) {
           link: `/restaurant/orders/${orderDoc._id?.toString?.() || ""}`,
         },
       },
+    });
+    const fcmOk = pushResult?.fcm?.successCount || 0;
+    const fcmFailed = pushResult?.fcm?.failureCount || 0;
+    const voipOk = pushResult?.voip?.successCount || 0;
+    const delivered = fcmOk + voipOk > 0;
+    logger[delivered ? "info" : "warn"](
+      `${tag} | 4/5 PUSH ${delivered ? "ACCEPTED by Firebase/APNs" : "NOT DELIVERED"} fcmOk=${fcmOk} fcmFailed=${fcmFailed} voipOk=${voipOk}${delivered ? "" : " (see [PUSH-ORDER] lines for the reason)"}`,
     );
+
+    step = "delay-alert";
     const { scheduleRestaurantResponseDelayAlert } = await import('../../admin/services/restaurantDelayAlert.service.js');
     await scheduleRestaurantResponseDelayAlert(orderDoc);
+    logger.info(`${tag} | 5/5 DONE in ${Date.now() - startedAt}ms`);
   } catch (error) {
-    // Do not block order/payment flow if notification fails, but say why.
-    logger.error(
-      `[PUSH-ORDER] RESTAURANT:${orderDoc?.restaurantId?.toString?.() || ""} order=${orderDoc?._id?.toString?.() || ""} | new-order notification crashed: ${error?.message || error}`,
-    );
+    // Do not block order/payment flow if notification fails, but say exactly where.
+    logger.error(`${tag} | CRASHED at step "${step}": ${error?.message || error}`);
   }
 }
 
