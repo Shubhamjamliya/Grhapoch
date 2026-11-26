@@ -26,14 +26,14 @@ export function getTipDefaultAmount(feeSettings = {}, options = getTipOptions(fe
 }
 
 /**
- * Delivery tip is mandatory once enabled: the customer picks one of the admin-configured
- * presets, but can never end up paying 0 — an invalid or missing choice falls back to the
- * admin default. 100% of the amount passes to the rider.
+ * Delivery tip is optional: the customer may pick an admin preset or enter their own amount
+ * (whole rupees, 1..MAX_TIP_AMOUNT). No choice (0) or an invalid amount means no tip.
+ * 100% of the amount passes to the rider.
  */
 export function resolveTipAmount(feeSettings = {}, requested) {
   const options = getTipOptions(feeSettings);
   if (options.length === 0) return 0;
   const n = Math.floor(Number(requested));
-  if (Number.isFinite(n) && options.includes(n)) return n;
-  return getTipDefaultAmount(feeSettings, options);
+  if (Number.isFinite(n) && n > 0 && n <= MAX_TIP_AMOUNT) return n;
+  return 0;
 }

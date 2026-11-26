@@ -26,13 +26,13 @@ export function getDonationDefaultAmount(feeSettings = {}, options = getDonation
 }
 
 /**
- * Donation is mandatory once enabled: the customer picks one of the admin-configured presets,
- * but can never end up paying 0 — an invalid or missing choice falls back to the admin default.
+ * Donation is optional: the customer may pick an admin preset or enter their own amount
+ * (whole rupees, 1..MAX_DONATION_AMOUNT). No choice (0) or an invalid amount means no donation.
  */
 export function resolveDonationAmount(feeSettings = {}, requested) {
   const options = getDonationOptions(feeSettings);
   if (options.length === 0) return 0;
   const n = Math.floor(Number(requested));
-  if (Number.isFinite(n) && options.includes(n)) return n;
-  return getDonationDefaultAmount(feeSettings, options);
+  if (Number.isFinite(n) && n > 0 && n <= MAX_DONATION_AMOUNT) return n;
+  return 0;
 }

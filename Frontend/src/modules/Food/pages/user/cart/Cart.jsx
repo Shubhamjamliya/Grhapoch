@@ -80,6 +80,94 @@ const formatFullAddress = (address) => {
 const RUPEE_SYMBOL = "\u20B9"
 const CART_RECIPIENT_DETAILS_STORAGE_KEY = "food-cart-recipient-details-v1"
 const CART_ORDER_NOTE_STORAGE_KEY = "food-cart-order-note-v1"
+// Keep in sync with MAX_TIP_AMOUNT / MAX_DONATION_AMOUNT in the backend helpers.
+const MAX_CUSTOM_TIP = 500
+const MAX_CUSTOM_DONATION = 1000
+
+const isValidCustomAmount = (n, max) => Number.isInteger(n) && n > 0 && n <= max
+
+/**
+ * "+" chip that lets the customer type their own amount next to the presets.
+ * Shows the custom amount as a selected chip once set; tapping that chip removes it.
+ */
+function CustomAmountChip({ value, presets, max, onChange, baseClass, selectedClass, idleClass }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState("")
+  const inputRef = useRef(null)
+  const isCustom = value > 0 && !presets.includes(value)
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus()
+  }, [editing])
+
+  const commit = () => {
+    if (!editing) return
+    setEditing(false)
+    const n = Math.floor(Number(draft))
+    if (!draft || !Number.isFinite(n) || n <= 0) return
+    if (n > max) {
+      toast.error(`Maximum amount is ${RUPEE_SYMBOL}${max}`)
+      onChange(max)
+      return
+    }
+    onChange(n)
+  }
+
+  if (editing) {
+    return (
+      <div className={`${baseClass} ${idleClass} !border-[#EB590E] gap-1 px-3`}>
+        <span>{RUPEE_SYMBOL}</span>
+        <input
+          ref={inputRef}
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={max}
+          value={draft}
+          placeholder="Amount"
+          aria-label="Enter amount"
+          onChange={(e) => setDraft(e.target.value.replace(/\D/g, "").slice(0, 4))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit()
+            if (e.key === "Escape") setEditing(false)
+          }}
+          onBlur={commit}
+          className="w-16 min-w-0 bg-transparent outline-none text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+      </div>
+    )
+  }
+
+  if (isCustom) {
+    return (
+      <button
+        type="button"
+        aria-pressed
+        aria-label={`Custom amount ${RUPEE_SYMBOL}${value}, tap to remove`}
+        onClick={() => onChange(0)}
+        className={`${baseClass} ${selectedClass} gap-1`}
+      >
+        <Check className="h-3.5 w-3.5" />
+        {RUPEE_SYMBOL}{value}
+      </button>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label="Enter a custom amount"
+      onClick={() => {
+        setDraft("")
+        setEditing(true)
+      }}
+      className={`${baseClass} ${idleClass} gap-1`}
+    >
+      <Plus className="h-4 w-4" />
+      Other
+    </button>
+  )
+}
 
 export default function Cart() {
   const companyName = useCompanyName()
@@ -123,7 +211,7 @@ export default function Cart() {
   const [showCoupons, setShowCoupons] = useState(false)
   const [appliedCoupon, setAppliedCoupon] = useState(null)
   const [couponCode, setCouponCode] = useState("")
-  // Mandatory presets: one is always selected once the admin enables tip/donation.
+  // Optional tip/donation: 0 = none, otherwise a preset or a custom amount.
   const [tipChoice, setTipChoice] = useState(0)
   const [donationChoice, setDonationChoice] = useState(0)
   const [manualCouponCode, setManualCouponCode] = useState("")
@@ -1050,22 +1138,17 @@ export default function Cart() {
     }
   }, [])
 
-  // Tip/donation selection is mandatory: keep it on a valid preset, defaulting when unset or removed.
+  // Tip/donation are optional: nothing is pre-selected. Clear the choice if the feature is
+  // turned off or the amount is out of range.
   useEffect(() => {
-    if (feeSettings.tipOptions.length === 0) {
-      if (tipChoice !== 0) setTipChoice(0)
-    } else if (!feeSettings.tipOptions.includes(tipChoice)) {
-      setTipChoice(feeSettings.tipDefault)
-    }
-  }, [feeSettings.tipOptions, feeSettings.tipDefault, tipChoice])
+    if (tipChoice === 0) return
+    if (feeSettings.tipOptions.length === 0 || !isValidCustomAmount(tipChoice, MAX_CUSTOM_TIP)) setTipChoice(0)
+  }, [feeSettings.tipOptions, tipChoice])
 
   useEffect(() => {
-    if (feeSettings.donationOptions.length === 0) {
-      if (donationChoice !== 0) setDonationChoice(0)
-    } else if (!feeSettings.donationOptions.includes(donationChoice)) {
-      setDonationChoice(feeSettings.donationDefault)
-    }
-  }, [feeSettings.donationOptions, feeSettings.donationDefault, donationChoice])
+    if (donationChoice === 0) return
+    if (feeSettings.donationOptions.length === 0 || !isValidCustomAmount(donationChoice, MAX_CUSTOM_DONATION)) setDonationChoice(0)
+  }, [feeSettings.donationOptions, donationChoice])
 
   // Use backend pricing if available, otherwise fallback to database fee settings
   const subtotal = pricing?.subtotal || cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
@@ -2932,12 +3015,12 @@ export default function Cart() {
                   </div>
                 )}
               </div>
-{/* Delivery partner tip (mandatory: one preset is always selected) */}
+{/* Delivery partner tip (optional: preset or custom amount, none selected by default) */}
               {feeSettings.deliveryTipEnabled && feeSettings.tipOptions.length > 0 && (
                 <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-5 rounded-2xl shadow-sm border border-slate-100 dark:border-gray-800">
                   <h3 className="text-sm font-bold text-gray-900 dark:text-white">Delivery Partner Tip</h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    100% of this goes to your delivery partner. One amount is added to every order.
+                    Optional. 100% of this goes to your delivery partner. Tap again to remove.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {feeSettings.tipOptions.map((amt) => {
@@ -2947,7 +3030,7 @@ export default function Cart() {
                           key={amt}
                           type="button"
                           aria-pressed={selected}
-                          onClick={() => setTipChoice(amt)}
+                          onClick={() => setTipChoice((prev) => (prev === amt ? 0 : amt))}
                           className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
                             selected
                               ? "bg-[#EB590E] border-[#EB590E] text-white"
@@ -2959,10 +3042,19 @@ export default function Cart() {
                         </button>
                       )
                     })}
+                    <CustomAmountChip
+                      value={tipChoice}
+                      presets={feeSettings.tipOptions}
+                      max={MAX_CUSTOM_TIP}
+                      onChange={setTipChoice}
+                      baseClass="inline-flex items-center py-2 rounded-full text-sm font-semibold border transition-colors"
+                      selectedClass="px-4 bg-[#EB590E] border-[#EB590E] text-white"
+                      idleClass="px-4 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200"
+                    />
                   </div>
                 </div>
               )}
-{/* Donation (mandatory: one preset is always selected) */}
+{/* Donation (optional: preset or custom amount, none selected by default) */}
               {feeSettings.donationEnabled && feeSettings.donationOptions.length > 0 && (
                 <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-5 rounded-2xl shadow-sm border border-slate-100 dark:border-gray-800">
                   <div className="flex items-start gap-3">
@@ -2974,7 +3066,7 @@ export default function Cart() {
                         Donation
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        A small amount included with every order to support the cause.
+                        Optional. Add a small amount to support the cause. Tap again to remove.
                       </p>
                     </div>
                   </div>
@@ -2987,7 +3079,7 @@ export default function Cart() {
                           key={amt}
                           type="button"
                           aria-pressed={selected}
-                          onClick={() => setDonationChoice(amt)}
+                          onClick={() => setDonationChoice((prev) => (prev === amt ? 0 : amt))}
                           className={`relative flex items-center justify-center gap-1 py-2.5 rounded-xl text-sm font-semibold border transition-all active:scale-95 ${
                             selected
                               ? "bg-[#EB590E] border-[#EB590E] text-white shadow-sm"
@@ -2999,6 +3091,15 @@ export default function Cart() {
                         </button>
                       )
                     })}
+                    <CustomAmountChip
+                      value={donationChoice}
+                      presets={feeSettings.donationOptions}
+                      max={MAX_CUSTOM_DONATION}
+                      onChange={setDonationChoice}
+                      baseClass="relative flex items-center justify-center py-2.5 rounded-xl text-sm font-semibold border transition-all active:scale-95"
+                      selectedClass="bg-[#EB590E] border-[#EB590E] text-white shadow-sm"
+                      idleClass="bg-white dark:bg-[#111111] border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:border-[#EB590E]"
+                    />
                   </div>
                 </div>
               )}

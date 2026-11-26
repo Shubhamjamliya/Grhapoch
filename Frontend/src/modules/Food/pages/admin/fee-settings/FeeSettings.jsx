@@ -684,7 +684,7 @@ export default function FeeSettings() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700">
-                        Delivery Partner Tip (Mandatory)
+                        Delivery Partner Tip (Optional)
                       </label>
                       <p className="text-xs text-slate-500 mt-1">
                         When enabled, the customer must pick one of these amounts at checkout (the default below is pre-selected). 100% goes to the delivery partner.
