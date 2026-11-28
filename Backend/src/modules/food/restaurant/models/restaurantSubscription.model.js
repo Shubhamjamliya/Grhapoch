@@ -39,6 +39,9 @@ const restaurantSubscriptionSchema = new mongoose.Schema(
   { collection: "food_restaurant_subscriptions", timestamps: true }
 );
 
+// Webhook lookup: Razorpay payment -> subscription
+restaurantSubscriptionSchema.index({ "razorpayDetails.orderId": 1 }, { sparse: true });
+
 export const FoodRestaurantSubscription = mongoose.model(
   "FoodRestaurantSubscription",
   restaurantSubscriptionSchema

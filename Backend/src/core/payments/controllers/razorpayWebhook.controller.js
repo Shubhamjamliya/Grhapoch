@@ -7,6 +7,7 @@ import { markCapturedQrPayment } from '../../../modules/food/orders/services/ord
 import { afterOnlinePaymentCaptured } from '../../../modules/food/orders/services/order.service.js';
 import { creditTopupIntent } from '../../../modules/food/user/services/userWallet.service.js';
 import { recordRiderCashDeposit } from '../../../modules/food/delivery/services/deliveryFinance.service.js';
+import { handleSubscriptionPaymentCaptured } from '../../../modules/food/restaurant/services/restaurantSubscription.service.js';
 import { PaymentIntent } from '../models/paymentIntent.model.js';
 import { PaymentWebhookEvent } from '../models/webhookEvent.model.js';
 import { config } from '../../../config/env.js';
@@ -91,7 +92,10 @@ async function handleCapturedPayment(payment, eventRef) {
 
   // Regular checkout flow
   const transaction = await findTransactionByGatewayOrder(payment?.order_id);
-  if (!transaction) return handleIntentCapture(payment);
+  if (!transaction) {
+    if (await handleSubscriptionPaymentCaptured(payment)) return null;
+    return handleIntentCapture(payment);
+  }
 
   const result = await financeService.capturePayment(transaction.orderId, {
     method: 'razorpay',

@@ -103,16 +103,21 @@ export const verifySubscriptionPayment = async (restaurantId, verifyData = {}) =
   const subscription = await FoodRestaurantSubscription.findOne({
     restaurantId,
     "razorpayDetails.orderId": razorpayOrderId,
-    paymentStatus: "pending",
-  });
+  }).lean();
 
   if (!subscription) {
-    throw new NotFoundError("Pending subscription not found for this order");
+    throw new NotFoundError("Subscription not found for this order");
   }
 
   const isValid = verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature);
   if (!isValid) {
     throw new ValidationError("Payment signature verification failed");
+  }
+
+  // The payment.captured webhook may have activated it already
+  if (subscription.paymentStatus === "paid") return subscription;
+  if (subscription.paymentStatus !== "pending") {
+    throw new ValidationError("Subscription is no longer awaiting payment");
   }
 
   // Cross-check payment details with Razorpay
@@ -126,33 +131,98 @@ export const verifySubscriptionPayment = async (restaurantId, verifyData = {}) =
   const expectedPaise = Math.round(subscription.pricePaid * 100);
   const paidPaise = Number(rzPayment?.amount);
   if (paidPaise !== expectedPaise || String(rzPayment?.order_id) !== razorpayOrderId) {
-    subscription.paymentStatus = "failed";
-    await subscription.save();
+    await FoodRestaurantSubscription.updateOne(
+      { _id: subscription._id, paymentStatus: "pending" },
+      { $set: { paymentStatus: "failed" } }
+    );
     throw new ValidationError("Razorpay payment details mismatch");
   }
 
+  const { subscription: activated } = await activatePaidSubscription(subscription, {
+    paymentId: razorpayPaymentId,
+    signature: razorpaySignature,
+  });
+  return activated;
+};
+
+/**
+ * Turn a pending subscription into the restaurant's active one. Called by the verify API and by the
+ * payment.captured webhook, so the restaurant gets its plan even if the app closes right after paying.
+ * Exactly-once: only the caller that flips paymentStatus pending -> paid activates; the other gets the
+ * already-activated subscription back with applied=false.
+ */
+export const activatePaidSubscription = async (subscription, { paymentId, signature = "" }) => {
   const plan = await FoodSubscriptionPlan.findById(subscription.planId).lean();
   if (!plan) throw new NotFoundError("Subscription plan not found");
 
   const startDate = new Date();
   const endDate = calculateEndDate(startDate, plan.durationValue, plan.durationUnit);
 
-  // Deactivate previous active subscriptions for this restaurant
+  const set = {
+    startDate,
+    endDate,
+    paymentStatus: "paid",
+    status: "active",
+    "razorpayDetails.paymentId": String(paymentId),
+  };
+  if (signature) set["razorpayDetails.signature"] = signature;
+
+  const activated = await FoodRestaurantSubscription.findOneAndUpdate(
+    { _id: subscription._id, paymentStatus: "pending" },
+    { $set: set },
+    { new: true }
+  ).lean();
+
+  if (!activated) {
+    const current = await FoodRestaurantSubscription.findById(subscription._id).lean();
+    if (current?.paymentStatus === "paid") return { subscription: current, applied: false };
+    throw new ValidationError("Subscription is no longer awaiting payment");
+  }
+
+  // The new plan replaces whatever the restaurant had before
   await FoodRestaurantSubscription.updateMany(
-    { restaurantId, status: "active" },
+    { restaurantId: activated.restaurantId, status: "active", _id: { $ne: activated._id } },
     { $set: { status: "expired" } }
   );
 
-  subscription.startDate = startDate;
-  subscription.endDate = endDate;
-  subscription.paymentStatus = "paid";
-  subscription.status = "active";
-  subscription.razorpayDetails.paymentId = razorpayPaymentId;
-  subscription.razorpayDetails.signature = razorpaySignature;
+  return { subscription: activated, applied: true };
+};
 
-  await subscription.save();
+/**
+ * payment.captured webhook for a subscription's Razorpay order.
+ * Returns true when the payment belonged to a subscription (handled or already handled), false otherwise.
+ */
+export const handleSubscriptionPaymentCaptured = async (payment) => {
+  const razorpayOrderId = String(payment?.order_id || "");
+  if (!razorpayOrderId) return false;
 
-  return subscription.toObject();
+  const subscription = await FoodRestaurantSubscription.findOne({
+    "razorpayDetails.orderId": razorpayOrderId,
+  }).lean();
+  if (!subscription) return false;
+  if (subscription.paymentStatus === "paid") return true;
+
+  const expectedPaise = Math.round(subscription.pricePaid * 100);
+  if (Number(payment.amount) !== expectedPaise) {
+    console.warn(
+      `[SUBSCRIPTION-WEBHOOK] Payment ${payment.id} amount ${payment.amount} does not match subscription ${subscription._id} (${expectedPaise}); not activated`
+    );
+    return true;
+  }
+
+  // A mismatch from a different payment may have marked it failed; a correct captured payment still counts
+  if (subscription.paymentStatus === "failed") {
+    await FoodRestaurantSubscription.updateOne(
+      { _id: subscription._id, paymentStatus: "failed" },
+      { $set: { paymentStatus: "pending" } }
+    );
+  }
+
+  const { applied } = await activatePaidSubscription(subscription, { paymentId: payment.id });
+  if (applied) {
+    console.log(`[SUBSCRIPTION-WEBHOOK] Activated subscription ${subscription._id} for restaurant ${subscription.restaurantId}`);
+  }
+  return true;
 };
 
 export const getCurrentSubscription = async (restaurantId) => {
